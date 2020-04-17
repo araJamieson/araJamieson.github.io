@@ -68,7 +68,7 @@ function makeIcons ()
 /******************************************************************************/
 function makeMap ()
 {
-    G_Map = L.map('the-map', {center: [51.505, -0.09], zoom: 14});
+    G_Map = L.map('the-map', {center: [51.539088, -0.073342], zoom: 14});
 
     L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}',
 		{attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery &copy; <a href="https://www.mapbox.com/">Mapbox</a>',
