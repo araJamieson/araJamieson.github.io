@@ -107,11 +107,12 @@ function makeMarkers ()
     for (var i = 0; i < G_ChurchDetails.length; ++i)
     {
 	var x = G_ChurchDetails[i];
+	var parishBoundaryMarker = (0 !== x.dataBoundary.length) ? "* " : "";
 	var marker = L.marker([x.latitude, x.longitude], {icon: G_Icons[x.deanery]}).addTo(G_Map);
 	var popup = L.popup().setLatLng([x.latitude, x.longitude]).setContent(x.content);
 	popup.churchDetailsIndex = i;
 	marker.bindPopup(popup);
-	marker.bindTooltip(G_ChurchNames[i]);
+	marker.bindTooltip(parishBoundaryMarker + G_ChurchNames[i]);
 	G_Markers.push(marker);
     }
 }
