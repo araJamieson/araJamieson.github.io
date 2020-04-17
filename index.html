@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <META HTTP-EQUIV="CACHE-CONTROL" CONTENT="NO-CACHE">
+  
+  <title>Deanery map</title>
+
+
+  <!-- Favicons -->
+  <link href="images/favicon.png" rel="icon">
+
+
+  <!-- Leaflet OpenStreetMap interface. -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+	integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+	crossorigin=""/>
+    
+  <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+	  integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+	  crossorigin=""></script>
+
+
+  <!-- Bootstrap core CSS -->
+  <script src="vendor/jquery/jquery.slim.min.js"></script>
+  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css?family=Noto+Serif:300,300i,400,400i,600,600i,700,700i|Raleway:300,300i,400,400i,600,600i,700,700i" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+
+  <!-- My stuff -->
+  <script src="./js/churchDetails.js"></script>
+  <script src="./js/local.js"></script>
+  <link rel="stylesheet" href="./css/local.css">
+</head>
+
+
+
+<body onload="onLoad();">
+  <!-- Navigation -->
+  <nav id="navbar" class="navbar navbar-expand-md navbar-light c-of-e-background xfixed-top">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="#"><img id="logo" src="./images/logo.png" alt="logo"><span id="brand"> Deanery map</span></a>
+      &nbsp;&nbsp;&nbsp;
+      Legend: 
+      <span class="legend dropshadowimg" style="color:lightgreen">Hackney</span>
+      &nbsp;
+      <span class="legend dropshadowimg" style="color:yellow">Islington</span>
+      &nbsp;
+      <span class="legend dropshadowimg" style="color:#ff8080">Tower Hamlets</span>
+    </div>
+
+    <ul class="nav navbar-nav ml-auto">    
+      <li>
+	<div class="dropdown">
+	  <button class="btn btn-secondary dropdown" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-bars" style="width:30px"></i></button>
+	  <ul id="menu-of-churches" class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
+	    <li><a class="dropdown-item" href="javascript:selectItem(1)">Select</a></li>
+	  </ul>
+	</div>
+      </li>
+    </ul>
+  </nav>
+
+
+
+  <!-- Page Content -->
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-12" style="padding:0px">
+	<div id="the-map" style="border-top:3px solid black; border-bottom:3px solid black;"></div>
+      </div>
+    </div>
+
+    <div id="footer" class="row c-of-e-background" style="height:10px">
+      <div class="col-12">
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Error modal -->
+  <div id="error-modal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+      <div class="modal-content">
+	<div class="modal-header" style="background:blue">
+          <h4 class="modal-title" style="color:white;font-size:medium">Error</h4>
+          <button type="button" class="close" data-dismiss="modal"><span style="color:white">&times;</span></button>
+	</div>
+	<div class="modal-body" style="background:lightblue">
+          <p id="error-text" style="font-size:medium"></p>
+	</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

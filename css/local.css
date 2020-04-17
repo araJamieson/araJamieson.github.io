@@ -1,0 +1,93 @@
+#brand {
+    font-family:"Noto Serif", serif;
+    font-size:large;
+}
+
+
+#logo {
+  width:40px;
+}
+
+
+#the-map {
+    cursor:pointer;
+}
+
+
+.c-of-e-background {
+  background:#d7a8e9 !important;
+}
+
+
+.legend
+{
+    font-size:small;
+    font-weight:bold;
+
+    border:2px solid black;
+    border-radius: 5px;
+    background: #9768a1;
+    padding: 4px;
+}
+
+
+.dropdown-menu {
+    max-height: 400px;
+    overflow: hidden;
+    overflow-y: auto;
+}
+
+
+.dropshadowimg {
+    width:200px;
+    box-shadow: 5px 5px 5px #999;
+}
+
+
+.error {
+    color:yellow;
+}
+
+
+.hidden {
+    display:none;
+}
+
+
+body, html
+{
+    font-family:Calibri, Arial, Helvetica, sans-serif;
+    overflow:hidden;
+}
+
+
+br
+{
+    padding-bottom:2px;
+}
+
+
+optional-header
+{
+    display:block;
+    padding-top:1em;
+    padding-bottom:0em;
+    font-weight:bold;
+    text-align:center;
+}
+
+
+
+
+/******************************************************************************/
+.standard-text {
+    color:#505050;
+    font-size:large;
+}
+
+
+@media screen and (max-width:768px) {
+    .standard-text {
+	font-size:medium;
+    }
+}
