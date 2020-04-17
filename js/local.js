@@ -8,20 +8,22 @@ var G_Markers = [];
 /******************************************************************************/
 function onLoad ()
 {
-    //----------------------------------------------------------------------
-    setHeightHeight();
-    window.onorientationchange = function() { setTimeout(setHeightHeight, 1000); };
-    window.onresize = function() { setTimeout(setHeightHeight, 100); };
-
-
-
-    //----------------------------------------------------------------------
+    handleHeights();
+    setUpdatedDate();
     makeMap();
     makeIcons();
     makeMarkers();
     makeMenu();
     makeParishBoundaries();
-    G_Map.on("popupopen", function (e) {  showParishBoundary(G_ChurchDetails[e.popup.churchDetailsIndex].parishBoundary);  });
+}
+
+
+/******************************************************************************/
+function handleHeights ()
+{
+    setHeight();
+    window.onorientationchange = function() { setTimeout(setHeightHeight, 1000); };
+    window.onresize = function() { setTimeout(setHeightHeight, 100); };
 }
 
 
@@ -76,6 +78,10 @@ function makeMap ()
 		 zoomOffset: -1,
 		 accessToken: 'pk.eyJ1IjoiYXJhai1tYXBwaW5nIiwiYSI6ImNrOTAxa2MwZzAwenczbW50Nmp2OHJnOGQifQ.MQaj-mNdjT6vbj4Pa5VGPQ' // Public key.
 		}).addTo(G_Map);
+
+    G_Map.on("popupopen", function (e) {  showParishBoundary(G_ChurchDetails[e.popup.churchDetailsIndex].parishBoundary);  });
+
+    L.control.scale({metric:true, imperial:true, maxWidth:200}).addTo(G_Map);
 }
 
 
@@ -115,9 +121,9 @@ function makeParishBoundaries ()
     {
 	var x = G_ChurchDetails[i];
 	x.parishBoundary = null;
-	if (0 != x.dataBoundary.length)
+	if (0 !== x.dataBoundary.length)
 	{
-	    var boundaryElts = decode(G_ChurchDetails[i].dataBoundary)
+	    var boundaryElts = decode(G_ChurchDetails[i].dataBoundary);
 	    var polygon = L.polygon(boundaryElts, {color: 'red'});
 	    x.parishBoundary = polygon;
 	}
@@ -139,11 +145,30 @@ function selectItem (n)
 /******************************************************************************/
 /* Force the map container to fill the space between header and footer. */
 
-function setHeightHeight ()
+function setHeight ()
 {
     var h = $(window).outerHeight() - $("#navbar").outerHeight() - $("#footer").outerHeight();
     $("#the-map").css("max-height", h + "px");
     $("#the-map").css("min-height", h + "px");
+}
+
+
+/******************************************************************************/
+function setUpdatedDate ()
+{
+    //----------------------------------------------------------------------
+    var v = G_DateLastUpdated.split("/");
+    var dtUpdated = new Date(v[2], v[1] - 1, v[0]);
+    const formattedDate = dtUpdated.toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'}).replace(/ /g, '-');
+    $("#last-update").text(formattedDate);
+
+
+
+    //----------------------------------------------------------------------
+    var today = new Date();
+    var daysSinceLastUpdate =  Math.floor((today.getTime() - dtUpdated.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysSinceLastUpdate > 60) // Warning if too elderly.
+	$("#last-update-container").addClass("last-update-container");
 }
 
 
