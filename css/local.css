@@ -19,18 +19,6 @@
 }
 
 
-.legend
-{
-    font-size:small;
-    font-weight:bold;
-
-    border:2px solid black;
-    border-radius: 5px;
-    background: #9768a1;
-    padding: 4px;
-}
-
-
 .dropdown-menu {
     max-height: 400px;
     overflow: hidden;
@@ -51,6 +39,28 @@
 
 .hidden {
     display:none;
+}
+
+
+.last-update-container {
+    background:red;
+    border:2px solid black;
+    border-radius: 5px;
+    color:yellow;
+    font-weight:bold;
+}
+
+
+.legend
+{
+    font-size:small;
+    font-weight:bold;
+
+    border:2px solid black;
+    border-radius: 5px;
+
+    background: #9768a1;
+    padding: 4px;
 }
 
 
