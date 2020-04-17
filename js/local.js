@@ -1,4 +1,5 @@
 /******************************************************************************/
+var G_ChurchNames = [];
 var G_CurrentlyVisibleParishBoundary = null;
 var G_Icons = {};
 var G_Map;
@@ -8,6 +9,7 @@ var G_Markers = [];
 /******************************************************************************/
 function onLoad ()
 {
+    initialiseData();
     handleHeights();
     setUpdatedDate();
     makeMap();
@@ -24,6 +26,20 @@ function handleHeights ()
     setHeight();
     window.onorientationchange = function() { setTimeout(setHeightHeight, 1000); };
     window.onresize = function() { setTimeout(setHeightHeight, 100); };
+}
+
+
+/******************************************************************************/
+function initialiseData ()
+{
+    for (var i = 0; i < G_ChurchDetailsIndex.length; ++i)
+	G_ChurchNames.push("");
+    
+    for (var i = 0; i < G_ChurchDetailsIndex.length; ++i)
+    {
+	var x = G_ChurchDetailsIndex[i];
+	G_ChurchNames[x.index] = x.name;
+    }
 }
 
 
@@ -95,6 +111,7 @@ function makeMarkers ()
 	var popup = L.popup().setLatLng([x.latitude, x.longitude]).setContent(x.content);
 	popup.churchDetailsIndex = i;
 	marker.bindPopup(popup);
+	marker.bindTooltip(G_ChurchNames[i]);
 	G_Markers.push(marker);
     }
 }
