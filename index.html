@@ -55,10 +55,6 @@
     </div>
 
     <ul class="nav navbar-nav ml-auto">    
-      <label class="btn btn-secondary active">
-	<input type="checkbox" unchecked autocomplete="off" onclick="javascript:multiSelectToggle()">Multi-select
-      </label>&nbsp;
-
       <li>
 	<div class="dropdown">
 	  <button class="btn btn-secondary dropdown" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-bars" style="width:30px"></i></button>
@@ -82,8 +78,10 @@
 
     <div id="footer" class="row c-of-e-background">
       <div class="col-12">
-	<span>Last updated: <span id="last-update"></span>&nbsp;&nbsp;<span id="out-of-date-warning" style="color:yellow;background:red;font-weight:bold;visibility:hidden;border:1px solid black"></span></span>&nbsp;&nbsp;&nbsp;
-	<span id="accumulated-data" style="color:white"></span>
+	<span style="float:right">
+	  <span id="accumulated-data" style="color:yellow;visibility:hidden;border:1px solid black;padding-left:10px;padding-right:10px;background:#9768a1"></span>&nbsp;&nbsp;&nbsp;
+	  <span>Last updated: <span id="last-update"></span>&nbsp;&nbsp;<span id="out-of-date-warning" style="color:yellow;background:red;font-weight:bold;visibility:hidden;border:1px solid black"></span></span>
+	</span>
       </div>
     </div>
   </div>
