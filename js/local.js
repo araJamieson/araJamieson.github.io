@@ -254,6 +254,7 @@ function autoClosePopups (val)
     {
 	G_Popups[i].options.autoClose = val;
 	G_Popups[i].options.closeOnClick = val;
+	G_Popups[i].options.draggable = true;
     }
 }
 
@@ -349,6 +350,17 @@ function setHeight ()
     var h = $(window).outerHeight() - $("#navbar").outerHeight() - $("#footer").outerHeight();
     $("#the-map").css("max-height", h + "px");
     $("#the-map").css("min-height", h + "px");
+}
+
+
+/******************************************************************************/
+function showHelp ()
+{
+    var s = $("#help-modal").html();
+    var addr = "jamie" + "@" + "critos.co.uk";
+    var text = "<a href='mail" + "to:" + addr + "'>" + addr + "</a>";
+    $("#help-modal").html(s.replace("$$$", text));
+    $("#help-modal").modal("show");
 }
 
 
