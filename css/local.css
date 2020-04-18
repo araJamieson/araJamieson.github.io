@@ -14,6 +14,20 @@
 }
 
 
+.btn {
+  background-color: DodgerBlue; /* Blue background */
+  border: none; /* Remove borders */
+  color: white; /* White text */
+  padding: 12px 16px; /* Some padding */
+  font-size: 16px; /* Set a font size */
+  cursor: pointer; /* Mouse pointer on hover */
+}
+
+.btn:hover {
+    background-color: RoyalBlue;
+}
+
+
 .c-of-e-background {
   background:#d7a8e9 !important;
 }
@@ -45,6 +59,12 @@
 }
 
 
+.logo-color
+{
+    background: #9768a1;
+}
+
+
 body, html
 {
     font-family:Calibri, Arial, Helvetica, sans-serif;
@@ -58,6 +78,28 @@ br
 }
 
 
+help-header
+{
+    display:block;
+    font-size:large;
+    font-weight:bold;
+    padding-bottom:1em;
+    padding-top:3em;
+    text-align:center;
+}
+
+
+help-p
+{
+    display:block;
+    text-align:justify;
+    padding-bottom:1em;
+}
+    
+
+
+
+
 optional-header
 {
     display:block;
@@ -65,20 +107,4 @@ optional-header
     padding-bottom:0em;
     font-weight:bold;
     text-align:center;
-}
-
-
-
-
-/******************************************************************************/
-.standard-text {
-    color:#505050;
-    font-size:large;
-}
-
-
-@media screen and (max-width:768px) {
-    .standard-text {
-	font-size:medium;
-    }
 }
