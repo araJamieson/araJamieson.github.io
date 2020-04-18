@@ -51,13 +51,7 @@
     <div class="navbar-header">
       <a class="navbar-brand" href="#"><img id="logo" src="./images/logo.png" alt="logo"><span id="brand"> Deanery map</span></a>
       &nbsp;&nbsp;&nbsp;
-      Legend: 
-      <span class="legend dropshadowimg" style="color:lightgreen">Hackney</span>
-      &nbsp;
-      <span class="legend dropshadowimg" style="color:yellow">Islington</span>
-      &nbsp;
-      <span class="legend dropshadowimg" style="color:#ff8080">Tower Hamlets</span>
-      &nbsp;&nbsp;&nbsp;<span id="last-update-container">Last updated: <span id="last-update"></span></span>
+      <span class="legend dropshadowimg">Legend: <span style="color:lightgreen">Hackney</span> | <span style="color:yellow">Islington</span> | <span style="color:#ff8080">Tower Hamlets</span></span>
     </div>
 
     <ul class="nav navbar-nav ml-auto">    
@@ -65,7 +59,7 @@
 	<div class="dropdown">
 	  <button class="btn btn-secondary dropdown" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-bars" style="width:30px"></i></button>
 	  <ul id="menu-of-churches" class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
-	    <li><a class="dropdown-item" href="javascript:selectItem(1)">Select</a></li>
+	    <!--<li><a class="dropdown-item" href="javascript:selectItem(1)">Select</a></li>-->
 	  </ul>
 	</div>
       </li>
@@ -82,14 +76,15 @@
       </div>
     </div>
 
-    <div id="footer" class="row c-of-e-background" style="height:10px">
+    <div id="footer" class="row c-of-e-background">
       <div class="col-12">
+	<div>Last updated: <span id="last-update"></span>&nbsp;&nbsp;<span id="out-of-date-warning" style="color:yellow;background:red;font-weight:bold;visibility:hidden;border:1px solid black"></span></div>
       </div>
     </div>
   </div>
 
 
-  <!-- Error modal -->
+  <!-- Error modal (not currently used) -->
   <div id="error-modal" class="modal fade" role="dialog">
     <div class="modal-dialog">
       <div class="modal-content">
