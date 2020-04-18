@@ -119,7 +119,7 @@ function makeMarkers ()
 	var popup = L.popup().setLatLng([x.latitude, x.longitude]).setContent(x.content);
 	popup.churchDetailsIndex = i;
 	marker.bindPopup(popup);
-	if (isTouchScreen()) marker.bindTooltip(parishBoundaryMarker + G_ChurchNames[i]);
+	if (!isTouchScreen()) marker.bindTooltip(parishBoundaryMarker + G_ChurchNames[i]);
 	G_Markers.push(marker);
     }
 }
