@@ -350,7 +350,7 @@ function setHeight ()
     var h = $(window).outerHeight() - $("#navbar").outerHeight() - $("#footer").outerHeight();
     $("#the-map").css("max-height", h + "px");
     $("#the-map").css("min-height", h + "px");
-    $(".modal-body").css("max-height", h + "px");
+    $(".modal-body").css("max-height", (h * 0.8) + "px");
 }
 
 
