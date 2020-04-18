@@ -1,9 +1,13 @@
 /******************************************************************************/
 var G_ChurchNames = [];
-var G_CurrentlyVisibleParishBoundary = null;
 var G_Icons = {};
+var G_InPopupCloseProcessing = false;
+var G_InPopupOpenProcessing = false;
 var G_Map;
 var G_Markers = [];
+var G_MultiSelectActive = false;
+var G_Popups = [];
+var G_SelectedItems = [];
 
 
 /******************************************************************************/
@@ -20,14 +24,16 @@ function onLoad ()
 }
 
 
-/******************************************************************************/
-function handleHeights ()
-{
-    setHeight();
-    window.onorientationchange = function() { setTimeout(setHeightHeight, 1000); };
-    window.onresize = function() { setTimeout(setHeightHeight, 100); };
-}
 
+
+
+/******************************************************************************/
+/******************************************************************************/
+/**                                                                          **/
+/**                              Initialisation                              **/
+/**                                                                          **/
+/******************************************************************************/
+/******************************************************************************/
 
 /******************************************************************************/
 function initialiseData ()
@@ -40,13 +46,6 @@ function initialiseData ()
 	var x = G_ChurchDetailsIndex[i];
 	G_ChurchNames[x.index] = x.name;
     }
-}
-
-
-/******************************************************************************/
-function isTouchScreen ()
-{
-    return ('ontouchstart' in window) || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
 }
 
 
@@ -85,24 +84,37 @@ function makeIcons ()
 	    shadowAnchor: [30, 50],  // Ditto for the shadow.
 	    popupAnchor:  [-5, -50]  // Point from which the popup should open relative to the iconAnchor.
 	});
+
+    G_Icons.Selected =
+	L.icon({
+	    iconUrl:      'images/selected.png',
+	    shadowUrl:    'images/shadow.png',
+	    iconSize:     [60, 100],
+	    shadowSize:   [60, 100],
+	    iconAnchor:   [30, 50],  // Point of the icon which will correspond to marker's location.
+	    shadowAnchor: [30, 50],  // Ditto for the shadow.
+	    popupAnchor:  [-5, -50]  // Point from which the popup should open relative to the iconAnchor.
+	});
+
 }
 
 
 /******************************************************************************/
 function makeMap ()
 {
-    G_Map = L.map('the-map', {center: [51.539088, -0.073342], zoom: 14});
+    G_Map = L.map('the-map', {center: [51.539088, -0.073342], zoom: 14,  zoomSnap: 0, wheelPxPerZoomLevel:120 });
 
     L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}',
 		{attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery &copy; <a href="https://www.mapbox.com/">Mapbox</a>',
-		 maxZoom: 18,
+		 maxZoom: 20,
 		 id: 'mapbox/streets-v11',
 		 tileSize: 512,
 		 zoomOffset: -1,
 		 accessToken: 'pk.eyJ1IjoiYXJhai1tYXBwaW5nIiwiYSI6ImNrOTAxa2MwZzAwenczbW50Nmp2OHJnOGQifQ.MQaj-mNdjT6vbj4Pa5VGPQ' // Public key.
 		}).addTo(G_Map);
 
-    G_Map.on("popupopen", function (e) {  showParishBoundary(G_ChurchDetails[e.popup.churchDetailsIndex].parishBoundary);  });
+    G_Map.on("popupopen",  function (e) {  popupOpen (e.popup);  });
+    G_Map.on("popupclose", function (e) {  popupClose(e.popup);  });
 
     L.control.scale({metric:true, imperial:true, maxWidth:200}).addTo(G_Map);
 }
@@ -115,12 +127,15 @@ function makeMarkers ()
     {
 	var x = G_ChurchDetails[i];
 	var parishBoundaryMarker = (0 !== x.dataBoundary.length) ? "* " : "";
-	var marker = L.marker([x.latitude, x.longitude], {icon: G_Icons[x.deanery]}).addTo(G_Map);
+	var icon = G_Icons[x.deanery]; 
+	var marker = L.marker([x.latitude, x.longitude], {icon: icon, riseOnHover:true}).addTo(G_Map);
+	marker.myOriginalIcon = icon;
 	var popup = L.popup().setLatLng([x.latitude, x.longitude]).setContent(x.content);
-	popup.churchDetailsIndex = i;
+	popup.myChurchDetailsIndex = i;
 	marker.bindPopup(popup);
 	if (!isTouchScreen()) marker.bindTooltip(parishBoundaryMarker + G_ChurchNames[i]);
 	G_Markers.push(marker);
+	G_Popups.push(popup);
     }
 }
 
@@ -157,28 +172,6 @@ function makeParishBoundaries ()
 
 
 /******************************************************************************/
-function selectItem (n)
-{
-    var x = G_ChurchDetails[n];
-    var latLng = L.latLng(x.latitude, x.longitude);
-    G_Map.flyTo(latLng);
-    G_Markers[n].openPopup();
-    showParishBoundary(x.parishBoundary);
-}
-
-
-/******************************************************************************/
-/* Force the map container to fill the space between header and footer. */
-
-function setHeight ()
-{
-    var h = $(window).outerHeight() - $("#navbar").outerHeight() - $("#footer").outerHeight();
-    $("#the-map").css("max-height", h + "px");
-    $("#the-map").css("min-height", h + "px");
-}
-
-
-/******************************************************************************/
 function setUpdatedDate ()
 {
     //----------------------------------------------------------------------
@@ -201,22 +194,172 @@ function setUpdatedDate ()
 }
 
 
+
+
+
 /******************************************************************************/
-function showParishBoundary (boundary)
+/******************************************************************************/
+/**                                                                          **/
+/**                           Selection processing                           **/
+/**                                                                          **/
+/******************************************************************************/
+/******************************************************************************/
+
+/******************************************************************************/
+function accumulateInformationForSelectedItems ()
 {
-    if (null != G_CurrentlyVisibleParishBoundary)
+    //----------------------------------------------------------------------
+    if (0 == G_SelectedItems.length)
     {
-	G_CurrentlyVisibleParishBoundary.removeFrom(G_Map);
-	G_CurrentlyVisibleParishBoundary = null;
+	$("#accumulated-data").text("");
+	return;
     }
+
+
     
-    if (null != boundary)
+    //----------------------------------------------------------------------
+    var dubiousElectoralRoll = false;
+    var dubiousParishPopulation = false;
+    var totalElectoralRoll = 0;
+    var totalParishPopulation = 0;
+
+    for (var i = 0; i < G_SelectedItems.length; ++i)
     {
-	G_CurrentlyVisibleParishBoundary = boundary;
-	boundary.addTo(G_Map);
+	x = G_ChurchDetails[G_SelectedItems[i]];
+
+	if (0 === x.electoralRoll.length)
+	    dubiousElectoralRoll = true;
+	else
+	    totalElectoralRoll += Number(x.electoralRoll);
+	
+	if (0 === x.parishPopulation.length)
+	    dubiousParishPopulation = true;
+	else
+	    totalParishPopulation += Number(x.parishPopulation);
+    }
+
+    var electoralRoll = "Total electoral roll: " + totalElectoralRoll + (dubiousElectoralRoll ? " (Figure incomplete)" : "");
+    var totalParishPopulation = "Total parish pop: " + totalParishPopulation + (dubiousParishPopulation ? " (Figure incomplete)" : "");
+    var text = electoralRoll + "   " + totalParishPopulation;
+	
+    $("#accumulated-data").text(text);
+}
+
+
+/******************************************************************************/
+function autoClosePopups (val)
+{
+    for (var i = 0; i < G_Popups.length; ++i)
+    {
+	G_Popups[i].options.autoClose = val;
+	G_Popups[i].options.closeOnClick = val;
     }
 }
+
+
+/******************************************************************************/
+function multiSelectToggle ()
+{
+    for (var i = 0; i < G_Popups.length; ++i)
+	G_Popups[i].removeFrom(G_Map);
     
+    G_MultiSelectActive = !G_MultiSelectActive;
+    autoClosePopups(!G_MultiSelectActive);
+}
+
+
+/******************************************************************************/
+function popupClose (popup)
+{
+    if (G_InPopupOpenProcessing || G_InPopupCloseProcessing) return;
+    G_InPopupCloseProcessing = true;
+
+    var ix = popup.myChurchDetailsIndex;
+    
+    if (null != G_ChurchDetails[ix].parishBoundary)
+	G_ChurchDetails[ix].parishBoundary.removeFrom(G_Map);
+
+    G_Markers[ix].options.icon = G_Markers[ix].myOriginalIcon;
+    G_Markers[ix].removeFrom(G_Map);
+    G_Markers[ix].addTo(G_Map);
+
+    G_SelectedItems.push[ix];
+    G_SelectedItems.splice(G_SelectedItems.indexOf(ix), 1);
+    accumulateInformationForSelectedItems();
+
+    G_InPopupCloseProcessing = false;
+}
+
+
+/******************************************************************************/
+function popupOpen (popup)
+{
+    if (G_InPopupOpenProcessing) return;
+    G_InPopupOpenProcessing = true;
+    
+    var ix = popup.myChurchDetailsIndex;
+
+    if (null != G_ChurchDetails[ix].parishBoundary)
+	G_ChurchDetails[ix].parishBoundary.addTo(G_Map);
+
+    G_Markers[ix].options.icon = G_Icons.Selected;
+    G_Markers[ix].removeFrom(G_Map);
+    G_Markers[ix].addTo(G_Map);
+    G_Popups[ix].openOn(G_Map);
+
+    G_SelectedItems.push(ix);
+    accumulateInformationForSelectedItems();
+
+    G_InPopupOpenProcessing = false;
+}
+
+
+/******************************************************************************/
+function selectItem (n)
+{
+    var x = G_ChurchDetails[n];
+    var latLng = L.latLng(x.latitude, x.longitude);
+    G_Map.flyTo(latLng);
+    G_Markers[n].openPopup();
+}
+
+
+
+
+
+/******************************************************************************/
+/******************************************************************************/
+/**                                                                          **/
+/**                              Miscellaneous                               **/
+/**                                                                          **/
+/******************************************************************************/
+/******************************************************************************/
+
+/******************************************************************************/
+function handleHeights ()
+{
+    setHeight();
+    window.onorientationchange = function() { setTimeout(setHeightHeight, 1000); };
+    window.onresize = function() { setTimeout(setHeightHeight, 100); };
+}
+
+
+/******************************************************************************/
+function isTouchScreen ()
+{
+    return ('ontouchstart' in window) || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
+}
+
+
+/******************************************************************************/
+/* Force the map container to fill the space between header and footer. */
+
+function setHeight ()
+{
+    var h = $(window).outerHeight() - $("#navbar").outerHeight() - $("#footer").outerHeight();
+    $("#the-map").css("max-height", h + "px");
+    $("#the-map").css("min-height", h + "px");
+}
 
 
 
