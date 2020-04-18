@@ -44,6 +44,13 @@ function initialiseData ()
 
 
 /******************************************************************************/
+function isTouchScreen ()
+{
+    return ('ontouchstart' in window) || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
+}
+
+
+/******************************************************************************/
 function makeIcons ()
 {
     G_Icons.Hackney =
@@ -112,7 +119,7 @@ function makeMarkers ()
 	var popup = L.popup().setLatLng([x.latitude, x.longitude]).setContent(x.content);
 	popup.churchDetailsIndex = i;
 	marker.bindPopup(popup);
-	marker.bindTooltip(parishBoundaryMarker + G_ChurchNames[i]);
+	if (isTouchScreen()) marker.bindTooltip(parishBoundaryMarker + G_ChurchNames[i]);
 	G_Markers.push(marker);
     }
 }
@@ -183,10 +190,14 @@ function setUpdatedDate ()
 
 
     //----------------------------------------------------------------------
+    var C_WarnAfterDays = 60;
     var today = new Date();
     var daysSinceLastUpdate =  Math.floor((today.getTime() - dtUpdated.getTime()) / (1000 * 60 * 60 * 24));
-    if (daysSinceLastUpdate > 60) // Warning if too elderly.
-	$("#last-update-container").addClass("last-update-container");
+    if (daysSinceLastUpdate > C_WarnAfterDays) // Warning if too elderly.
+    {
+	$("#out-of-date-warning").html("&nbsp;&nbsp;WARNING: Data is at least " + C_WarnAfterDays + " days old.&nbsp;&nbsp;");
+	$("#out-of-date-warning").css("visibility", "visible");
+    }
 }
 
 
