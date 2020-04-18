@@ -65,6 +65,13 @@
 }
 
 
+.modal-body
+{
+    overflow: hidden;
+    overflow-y: auto;
+}
+
+
 body, html
 {
     font-family:Calibri, Arial, Helvetica, sans-serif;
@@ -96,9 +103,6 @@ help-p
     padding-bottom:1em;
 }
     
-
-
-
 
 optional-header
 {
