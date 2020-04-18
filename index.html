@@ -55,9 +55,10 @@
     </div>
 
     <ul class="nav navbar-nav ml-auto">    
+      <button class="btn" title="Help" onclick="javascript:showHelp()"><i class="fa fa-question"></i></button>&nbsp;
       <li>
 	<div class="dropdown">
-	  <button class="btn btn-secondary dropdown" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-bars" style="width:30px"></i></button>
+	  <button class="btn btn-secondary dropdown" type="button" id="dropdownMenuButton" title="Select by name" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-bars" style="width:30px"></i></button>
 	  <ul id="menu-of-churches" class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
 	    <!--<li><a class="dropdown-item" href="javascript:selectItem(1)">Select</a></li>-->
 	  </ul>
@@ -78,7 +79,7 @@
 
     <div id="footer" class="row c-of-e-background">
       <div class="col-12">
-	<span style="float:left"><span>Version 1</span></span>
+	<span style="float:left"><span>Version 0.1</span></span>
 	<span style="float:right">
 	  <span id="accumulated-data" style="color:yellow;visibility:hidden;border:1px solid black;padding-left:10px;padding-right:10px;background:#9768a1"></span>&nbsp;&nbsp;&nbsp;
 	  <span>Last updated: <span id="last-update"></span>&nbsp;&nbsp;<span id="out-of-date-warning" style="color:yellow;background:red;font-weight:bold;visibility:hidden;border:1px solid black"></span></span>
@@ -89,15 +90,112 @@
 
 
   <!-- Error modal (not currently used) -->
-  <div id="error-modal" class="modal fade" role="dialog">
+  <div id="help-modal" class="modal fade" role="dialog">
     <div class="modal-dialog">
       <div class="modal-content">
 	<div class="modal-header" style="background:blue">
-          <h4 class="modal-title" style="color:white;font-size:medium">Error</h4>
+          <h4 class="modal-title" style="color:white;font-size:medium">Help</h4>
           <button type="button" class="close" data-dismiss="modal"><span style="color:white">&times;</span></button>
 	</div>
 	<div class="modal-body" style="background:lightblue">
-          <p id="error-text" style="font-size:medium"></p>
+
+
+<help-header>Overview</help-header>
+
+<help-p>This works in much the same way as Google maps (ie you can
+scroll, zoom, etc).</p>
+
+<help-p>The icons show churches.  They are
+colour-coded: <span style="color:green;font-weight:bold">GREEN</span>
+for Hackney deanery, <span style="color:yellow;font-weight:bold">YELLOW</span> for
+Islington, and <span style="color:#cc6699;font-weight:bold">PINK</span>
+for Tower Hamlets.</help-p>
+
+<help-p>If you click on a church, a popup will appear giving brief
+details.  Items in blue on the popup are hyperlinks to pages where
+more detailed information is available.  The information available
+differs between the various churches, according to what I was able to
+find.  Where a church has associated parish bounday information, the
+parish boundary is displayed as well.</help-p>
+
+<help-p>A church is regarded is &lsquo;selected&rsquo; once you have
+displayed its popup, and it remains selected until you close the popup
+(which you do by clicking on the cross at the top right).  You can
+have more than one church selected at the same time.  Certain
+aggregate data about the selected churches is displayed across the
+bottom of the screen.  If only <em>some</em> of the selected churches
+can supply the data which is being aggregated, the message at the
+bottom of the screen warns that the information is incomplete.</help-p>
+
+<help-p>The bottom row of the screen also indicates the current
+version of the tool, and the date upon which the data it relies upon
+was last updated.  If the data is more than two months old (an
+arbitrary figure), you are warned that it may perhaps be time to
+update it.  To this end, support details appear below.</help-p>
+
+  
+
+<help-header>About the data</help-header>
+
+<help-p>The information in the tool has come from a variety of sources.</help-p>
+
+<help-p>The basic framwork has been derived from
+the <a href="https://www.london.anglican.org/directory/" target="_blank">London
+Diocesan Directory</a>.</help-p>
+
+<help-p>I have supplemented this with information from Wikipedia, with
+details taken from the various church&rsquo;s own websites, and with
+material derived from a number of other miscellaneous
+sources.</help-p>
+
+<help-p>The information from the Diocesan Directory should in theory
+be the most reliable &mdash; although with the caveat that I have had
+to try to extract this information automatically, and taking
+information from web pages in this way is far from straightforward,
+and relies up different pages being put together in a consistent
+manner.</help-p>
+
+<help-p>In general the information from the other websites is less
+important, since most of it merely provides links to other places, and
+it will be readily apparent if they are wrong.  Having said that, the
+parish population information comes from Wikipedia, and I have no way
+of verifying that, nor of determining if it is up to date.</help-p>
+
+
+
+<help-header>About the tool</help-header>
+
+<help-p>The tool comprises an Excel spreadsheet in which I have
+gathered the various pieces of information, and then a collection of
+webby things, one of them derived from the tool, and the rest
+hand-crafted.</help-p>
+
+<help-p>It is possible that the spreadsheet may be useful in its own right.</help-p>
+
+<help-p>The mapping data is all open source (ie it&rsquo;s not Google
+Maps data), taken from <a href="https://www.openstreetmap.org/about"
+target="_blank">OpenStreetMap</a>.  The software which turns this data
+into displayable form is also open source
+(<a href="https://leafletjs.com/" target="_blank">leaflet.js</a>).</help-p>
+
+<help-p>I also rely upon software
+from <a href="https://www.mapbox.com/" target="_blank">mapbox</a>.
+This is <em>not</em> public domain, but they do make freely available
+a public key for limited general use, and this seems to be
+adequate.</help-p>
+
+<help-p>And finally, I am indebted to one <em>jhermsmeier</em> for code to manipulate map coordinates.</help-p>
+
+
+
+<help-header>Support</help-header>
+
+<help-p>For help and support, contact me at $$$.</help-p>
+
+<help-p><span style="text-decoration:underline">&lsquo;Jamie&rsquo; Jamieson</span></help-p>
+
+
+
 	</div>
       </div>
     </div>
