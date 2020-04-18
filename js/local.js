@@ -5,7 +5,6 @@ var G_InPopupCloseProcessing = false;
 var G_InPopupOpenProcessing = false;
 var G_Map;
 var G_Markers = [];
-var G_MultiSelectActive = false;
 var G_Popups = [];
 var G_SelectedItems = [];
 
@@ -21,6 +20,7 @@ function onLoad ()
     makeMarkers();
     makeMenu();
     makeParishBoundaries();
+    autoClosePopups(false);
 }
 
 
@@ -211,7 +211,7 @@ function accumulateInformationForSelectedItems ()
     //----------------------------------------------------------------------
     if (0 == G_SelectedItems.length)
     {
-	$("#accumulated-data").text("");
+	$("#accumulated-data").css("visibility", "hidden");
 	return;
     }
 
@@ -243,6 +243,7 @@ function accumulateInformationForSelectedItems ()
     var text = electoralRoll + "   " + totalParishPopulation;
 	
     $("#accumulated-data").text(text);
+    $("#accumulated-data").css("visibility", "visible");
 }
 
 
@@ -254,17 +255,6 @@ function autoClosePopups (val)
 	G_Popups[i].options.autoClose = val;
 	G_Popups[i].options.closeOnClick = val;
     }
-}
-
-
-/******************************************************************************/
-function multiSelectToggle ()
-{
-    for (var i = 0; i < G_Popups.length; ++i)
-	G_Popups[i].removeFrom(G_Map);
-    
-    G_MultiSelectActive = !G_MultiSelectActive;
-    autoClosePopups(!G_MultiSelectActive);
 }
 
 
