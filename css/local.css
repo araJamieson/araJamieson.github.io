@@ -32,25 +32,6 @@
 }
 
 
-.error {
-    color:yellow;
-}
-
-
-.hidden {
-    display:none;
-}
-
-
-.last-update-container {
-    background:red;
-    border:2px solid black;
-    border-radius: 5px;
-    color:yellow;
-    font-weight:bold;
-}
-
-
 .legend
 {
     font-size:small;
