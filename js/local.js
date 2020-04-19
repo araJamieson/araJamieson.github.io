@@ -267,7 +267,7 @@ function limitToRadius (id)
     var response;
     while (true)
     {
-	response = window.prompt("Limit to churches within this number of miles (blank => show all churches).  Decimals of a mile are ok.", "");
+	response = window.prompt("Limit to churches within this number of miles as the crow flies (blank => show all churches).  Decimals of a mile are ok.", "");
 	if (null === response) return;
 	response = response.trim();
 	if (0 === response.length) break;
@@ -319,7 +319,6 @@ function popupClose (popup)
     G_Markers[ix].removeFrom(G_Map);
     G_Markers[ix].addTo(G_Map);
 
-    G_SelectedItems.push(ix);
     G_SelectedItems.splice(G_SelectedItems.indexOf(ix), 1);
     accumulateInformationForSelectedItems();
 
@@ -425,9 +424,9 @@ function distance (lat1, lng1, lat2, lng2)
 /******************************************************************************/
 function handleHeights ()
 {
-    setHeight();
-    window.onorientationchange = function() { setTimeout(setHeight, 1000); };
-    window.onresize = function() { setTimeout(setHeight, 100); };
+    setDimensions();
+    window.onorientationchange = function() { setTimeout(setDimensions, 1000); };
+    window.onresize = function() { setTimeout(setDimensions, 100); };
 }
 
 
@@ -453,12 +452,29 @@ function removeMarkerFromMap (marker)
 /******************************************************************************/
 /* Force the map container to fill the space between header and footer. */
 
-function setHeight ()
+function setDimensions ()
 {
     var h = $(window).outerHeight() - $("#navbar").outerHeight() - $("#footer").outerHeight();
+
     $("#the-map").css("max-height", h + "px");
     $("#the-map").css("min-height", h + "px");
-    $(".modal-body").css("max-height", (h * 0.8) + "px");
+
+    h = h * 0.8;
+    $("#modal-body-help").css("max-height", h + "px");
+
+    var w = ($("#general-modal").innerWidth() -
+	     parseInt($("#general-modal").css("padding-left")) -
+	     parseInt($("#general-modal").css("padding-right")) -
+	     parseInt($("#general-modal").css("border-left-width")) -
+	     parseInt($("#general-modal").css("border-right-width")) );
+    w = 0.8 * w;
+
+    $(".general-modal").css("min-width", w + "px");
+    $(".general-modal").css("min-height", w + "px");
+    $("#general-modal-content").css("min-height", (h * 0.8) + "px");
+
+    $("#general-modal").css("left", (0.125 * w) + "px");
+    $(".general-modal").css("position", "fixed");
 }
 
 
@@ -480,7 +496,7 @@ function showHelp ()
     s = s.replace("$softwareVersion$", "" + C_SoftwareVersion);
     s = s.replace("$dataDate$", formattedDate);
     s = s.replace("$outOfDateVisibility$", dataOutOfDate() ? "visible": "hidden");
-    s = s.replace("$warnDays$", "" + C_WarnAfterDays);
+    s = s.replace("$warnAfterDays$", "" + C_WarnAfterDays);
 
 
 
@@ -557,3 +573,15 @@ function decodeIntegers ( value, callback )
 
     return values;
 }
+
+
+/******************************************************************************/
+function showBoroughInformation (borough)
+{
+    borough = borough.replace(" ", "");
+    $("#general-modal-title").text("General information for " + borough);
+    $("#general-modal-content").attr("src", borough + ".html");
+    $("#general-modal").modal("show");
+//    $("#general-modal").fullscreen();
+}
+
