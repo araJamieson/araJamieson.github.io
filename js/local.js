@@ -1,4 +1,8 @@
 /******************************************************************************/
+var C_Version = 0.1
+var C_WarnAfterDays = 90;;
+
+
 var G_ChurchNames = [];
 var G_Icons = {};
 var G_InPopupCloseProcessing = false;
@@ -14,7 +18,7 @@ function onLoad ()
 {
     initialiseData();
     handleHeights();
-    setUpdatedDate();
+    setVersionInformation();
     makeMap();
     makeIcons();
     makeMarkers();
@@ -130,12 +134,14 @@ function makeMarkers ()
 	var icon = G_Icons[x.deanery]; 
 	var marker = L.marker([x.latitude, x.longitude], {icon: icon, riseOnHover:true}).addTo(G_Map);
 	marker.myOriginalIcon = icon;
+	marker.myOnMap = true;
 	var popup = L.popup().setLatLng([x.latitude, x.longitude]).setContent(x.content);
 	popup.myChurchDetailsIndex = i;
 	marker.bindPopup(popup);
 	if (!isTouchScreen()) marker.bindTooltip(parishBoundaryMarker + G_ChurchNames[i]);
 	G_Markers.push(marker);
 	G_Popups.push(popup);
+	x.marker = marker;
     }
 }
 
@@ -172,18 +178,17 @@ function makeParishBoundaries ()
 
 
 /******************************************************************************/
-function setUpdatedDate ()
+function setVersionInformation ()
 {
     //----------------------------------------------------------------------
     var v = G_DateLastUpdated.split("/");
     var dtUpdated = new Date(v[2], v[1] - 1, v[0]);
     const formattedDate = dtUpdated.toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'}).replace(/ /g, '-');
-    $("#last-update").text(formattedDate);
+    $("#version").text("Version: Tool " + C_Version + " • Data " + formattedDate);
 
 
 
     //----------------------------------------------------------------------
-    var C_WarnAfterDays = 60;
     var today = new Date();
     var daysSinceLastUpdate =  Math.floor((today.getTime() - dtUpdated.getTime()) / (1000 * 60 * 60 * 24));
     if (daysSinceLastUpdate > C_WarnAfterDays) // Warning if too elderly.
@@ -209,7 +214,7 @@ function setUpdatedDate ()
 function accumulateInformationForSelectedItems ()
 {
     //----------------------------------------------------------------------
-    if (0 == G_SelectedItems.length)
+    if (0 === G_SelectedItems.length)
     {
 	$("#accumulated-data").css("visibility", "hidden");
 	return;
@@ -240,8 +245,24 @@ function accumulateInformationForSelectedItems ()
 
     var electoralRoll = "Total electoral roll: " + totalElectoralRoll + (dubiousElectoralRoll ? " (Figure incomplete)" : "");
     var totalParishPopulation = "Total parish pop: " + totalParishPopulation + (dubiousParishPopulation ? " (Figure incomplete)" : "");
-    var text = electoralRoll + "   " + totalParishPopulation;
-	
+    var text = electoralRoll + " • " + totalParishPopulation;
+
+
+
+    //----------------------------------------------------------------------
+    var dist = "";
+    if (2 === G_SelectedItems.length)
+    {
+	var ix0 = G_SelectedItems[0];
+	var ix1 = G_SelectedItems[1];
+	var d = distance(G_ChurchDetails[ix0].latitude, G_ChurchDetails[ix0].longitude, G_ChurchDetails[ix1].latitude, G_ChurchDetails[ix1].longitude);
+	dist = "Dist: " + d.toFixed(1) + "mls • ";
+    }
+
+
+    
+    //----------------------------------------------------------------------
+    text = dist + text;
     $("#accumulated-data").text(text);
     $("#accumulated-data").css("visibility", "visible");
 }
@@ -255,6 +276,50 @@ function autoClosePopups (val)
 	G_Popups[i].options.autoClose = val;
 	G_Popups[i].options.closeOnClick = val;
 	G_Popups[i].options.draggable = true;
+    }
+}
+
+
+/******************************************************************************/
+function limitToRadius (id)
+{
+    //----------------------------------------------------------------------
+    var response;
+    while (true)
+    {
+	response = window.prompt("Limit to churches within this number of miles (blank => show all churches).  Decimals of a mile are ok.", "");
+	if (null === response) return;
+	response = response.trim();
+	if (0 === response.length) break;
+	if (!isNaN(response)) break;
+	alert("That wasn't a number!");
+    }
+
+
+
+    //----------------------------------------------------------------------
+    if (0 === response.length)
+    {
+	for (var i = 0; i < G_Markers.length; ++i)
+	    addMarkerToMap(G_Markers[i]);
+	return;
+    }
+
+
+
+    //----------------------------------------------------------------------
+    var ixTarget;
+    for (ixTarget = 0; ixTarget < G_ChurchDetails.length; ++ixTarget)
+	if (G_ChurchDetails[ixTarget].uniqueId == id) break;
+
+    var dist = Number(response);
+    for (var i = 0; i < G_ChurchDetails.length; ++i)
+    {
+	var d = distance(G_ChurchDetails[i].latitude, G_ChurchDetails[i].longitude, G_ChurchDetails[ixTarget].latitude, G_ChurchDetails[ixTarget].longitude);
+	if (d <= dist)
+	    addMarkerToMap(G_ChurchDetails[i].marker);
+        else
+	    removeMarkerFromMap(G_ChurchDetails[i].marker);
     }
 }
 
@@ -327,6 +392,46 @@ function selectItem (n)
 /******************************************************************************/
 
 /******************************************************************************/
+function addMarkerToMap (marker)
+{
+    if (!marker.myOnMap)
+    {
+	marker.myOnMap = true;
+	marker.addTo(G_Map);
+    }
+}
+
+
+/******************************************************************************/
+function degreesToRadians (degrees)
+{
+    return degrees * Math.PI / 180;
+}
+
+
+/******************************************************************************/
+/* Distance between two points (miles). */
+
+function distance (lat1, lng1, lat2, lng2)
+{
+    var R = 6371e3; // metres
+    var phi1 = degreesToRadians(lat1);
+    var phi2 = degreesToRadians(lat2);
+    var deltaPhi = degreesToRadians(lat2-lat1);
+    var deltaLambda = degreesToRadians(lng2-lng1);
+    var a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) +
+        Math.cos(phi1) * Math.cos(phi2) *
+        Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    var d = R * c;
+    d /= 1000;
+    d *= (5/8);
+
+    return d;
+}
+
+/******************************************************************************/
 function handleHeights ()
 {
     setHeight();
@@ -339,6 +444,17 @@ function handleHeights ()
 function isTouchScreen ()
 {
     return ('ontouchstart' in window) || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
+}
+
+
+/******************************************************************************/
+function removeMarkerFromMap (marker)
+{
+    if (marker.myOnMap)
+    {
+	marker.myOnMap = false;
+	marker.removeFrom(G_Map);
+    }
 }
 
 
