@@ -47,18 +47,24 @@
 
 <body onload="onLoad();">
   <!-- Navigation -->
-  <nav id="navbar" class="navbar navbar-expand-md navbar-light c-of-e-background xfixed-top">
+  <nav id="navbar" class="navbar navbar-expand navbar-light c-of-e-background xfixed-top">
     <div class="navbar-header">
       <a class="navbar-brand" href="#"><img id="logo" src="./images/logo.png" alt="logo"><span id="brand"> Deanery map</span></a>
-      &nbsp;&nbsp;&nbsp;
-      <span class="legend dropshadowimg">Legend: <span style="color:lightgreen">Hackney</span> | <span style="color:yellow">Islington</span> | <span style="color:#ff8080">Tower Hamlets</span></span>
+      <span class="navbar-text">&nbsp;&nbsp;<span class="legend"><span style="color:lightgreen">Hackney</span><span style="color:white"> &bull; </span><span style="color:yellow">Islington</span><span style="color:white"> &bull; </span><span style="color:#ff8080">Tower Hamlets</span></span>
     </div>
 
     <ul class="nav navbar-nav ml-auto">    
-      <button class="btn" title="Help" onclick="javascript:showHelp()"><i class="fa fa-question"></i></button>&nbsp;
+      <button class="btn" id="help-button" title="Help" onclick="javascript:showHelp()"><i class="fa fa-question"></i></button>&nbsp;
       <li>
 	<div class="dropdown">
-	  <button class="btn btn-secondary dropdown" type="button" id="dropdownMenuButton" title="Select by name" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-bars" style="width:30px"></i></button>
+	  <button class="btn btn-secondary dropdown"
+		  id="select-churches-button"
+		  type="button"
+		  id="dropdownMenuButton"
+		  title="Select by name"
+		  data-toggle="dropdown"
+		  aria-haspopup="true"
+		  aria-expanded="false"><i class="fa fa-bars"></i></button>
 	  <ul id="menu-of-churches" class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
 	    <!--<li><a class="dropdown-item" href="javascript:selectItem(1)">Select</a></li>-->
 	  </ul>
@@ -77,12 +83,9 @@
       </div>
     </div>
 
-    <div id="footer" class="row c-of-e-background">
+    <div id="footer" class="row logo-color">
       <div class="col-12">
-	<span id="version"></span>&nbsp;&nbsp;<span id="out-of-date-warning" style="color:yellow;background:red;font-weight:bold;visibility:hidden;border:1px solid black"></span>
-	<span style="float:right">
-	  <span id="accumulated-data" style="color:yellow;visibility:hidden;border:1px solid black;padding-left:10px;padding-right:10px;background:#9768a1"></span>
-	</span>
+	<span id="accumulated-data" style="color:yellow">&nbsp;</span>
       </div>
     </div>
   </div>
@@ -203,12 +206,18 @@ adequate.</help-p>
 
 <help-header>Support</help-header>
 
-<help-p>For help and support, contact me at $$$.</help-p>
+<help-p>For help and support, contact me at $contact$.</help-p>
 
 <help-p><span style="text-decoration:underline">&lsquo;Jamie&rsquo; Jamieson</span></help-p>
 
+<hr>
 
+<help-header>Version</help-header>
 
+<help-p style="text-align:center">
+Software: v$softwareVersion$<br>
+Data: $dataDate$</help-p>
+<help-p style="color:red;visibility:$outOfDateVisibility">WARNING: Data is more than $warnAfterDays$ old &mdash you may want to consider updating it.</help-p>
 	</div>
       </div>
     </div>
