@@ -9,6 +9,12 @@
 }
 
 
+#modal-body-help
+{
+    overflow: hidden !important;
+    overflow-y: auto !important;
+}
+
 #the-map {
     cursor:pointer;
 }
@@ -38,6 +44,14 @@
 }
 
 
+img.centred {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 50%;
+}
+
+
 .dropdown-menu {
     max-height: 400px;
     overflow: hidden;
@@ -63,17 +77,15 @@
     padding: 4px;
 }
 
+.legend:hover
+{
+    background:#774881;
+}
+
 
 .logo-color
 {
     background: #9768a1;
-}
-
-
-.modal-body
-{
-    overflow: hidden;
-    overflow-y: auto;
 }
 
 
