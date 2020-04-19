@@ -79,10 +79,9 @@
 
     <div id="footer" class="row c-of-e-background">
       <div class="col-12">
-	<span style="float:left"><span>Version 0.1</span></span>
+	<span id="version"></span>&nbsp;&nbsp;<span id="out-of-date-warning" style="color:yellow;background:red;font-weight:bold;visibility:hidden;border:1px solid black"></span>
 	<span style="float:right">
-	  <span id="accumulated-data" style="color:yellow;visibility:hidden;border:1px solid black;padding-left:10px;padding-right:10px;background:#9768a1"></span>&nbsp;&nbsp;&nbsp;
-	  <span>Last updated: <span id="last-update"></span>&nbsp;&nbsp;<span id="out-of-date-warning" style="color:yellow;background:red;font-weight:bold;visibility:hidden;border:1px solid black"></span></span>
+	  <span id="accumulated-data" style="color:yellow;visibility:hidden;border:1px solid black;padding-left:10px;padding-right:10px;background:#9768a1"></span>
 	</span>
       </div>
     </div>
@@ -128,11 +127,18 @@ can supply the data which is being aggregated, the message at the
 bottom of the screen warns that the information is incomplete.</help-p>
 
 <help-p>The bottom row of the screen also indicates the current
-version of the tool, and the date upon which the data it relies upon
-was last updated.  If the data is more than two months old (an
+version of the tool, and the date when the data it relies upon
+was last updated.  If the data is more than three months old (an
 arbitrary figure), you are warned that it may perhaps be time to
 update it.  To this end, support details appear below.</help-p>
 
+<help-p>If precisely two churches are selected, the bottom row shows
+the distance between them in miles.</help-p>
+    
+<help-p>The popup for each church includes a button which lets you
+limit the display to showing only churches within a given distance of
+the one you have selected.  More details appear on the prompt which
+lets you specify the distance of interest.</help-p>
   
 
 <help-header>About the data</help-header>
@@ -160,6 +166,13 @@ important, since most of it merely provides links to other places, and
 it will be readily apparent if they are wrong.  Having said that, the
 parish population information comes from Wikipedia, and I have no way
 of verifying that, nor of determining if it is up to date.</help-p>
+
+<help-p>Note that the data from the Diocesan Directory covers more
+than just churches (it includes various chaplaincies, for instance).
+I have removed this information from the data presented here, but if
+you feel that some of it should be included (or that some of the data
+which the tool actually presents should not be appearing) the list is
+easily amended &mdash; support details below.</help-p>
 
 
 
