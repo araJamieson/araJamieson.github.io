@@ -50,7 +50,11 @@
   <nav id="navbar" class="navbar navbar-expand navbar-light c-of-e-background xfixed-top">
     <div class="navbar-header">
       <a class="navbar-brand" href="#"><img id="logo" src="./images/logo.png" alt="logo"><span id="brand"> Deanery map</span></a>
-      <span class="navbar-text">&nbsp;&nbsp;<span class="legend"><span style="color:lightgreen">Hackney</span><span style="color:white"> &bull; </span><span style="color:yellow">Islington</span><span style="color:white"> &bull; </span><span style="color:#ff8080">Tower Hamlets</span></span>
+      <span class="navbar-text">&nbsp;&nbsp;
+	<button class="legend" title="Hackney information" onclick="javascript:showBoroughInformation('Hackney')" style="color:lightgreen">Hackney</button>&nbsp;
+	<button class="legend" title="Islington information" onclick="javascript:showBoroughInformation('Islington')" style="color:yellow">Islington</button>&nbsp;
+	<button class="legend" title="Tower Hamlets information" onclick="javascript:showBoroughInformation('Tower Hamlets')" style="color:#ff8080">Tower Hamlets</button>&nbsp;
+      </span>
     </div>
 
     <ul class="nav navbar-nav ml-auto">    
@@ -91,6 +95,23 @@
   </div>
 
 
+  <!-- General info. -->
+  <div id="general-modal" class="modal fade general-modal" role="dialog">
+    <div class="modal-dialog general-modal">
+      <div class="modal-content" style="border:2px solid black">
+	<div class="modal-header" style="background:blue">
+          <h4 class="modal-title" id="general-modal-title" style="color:white;font-size:medium;font-weight:bold"></h4>
+          <button type="button" class="close" data-dismiss="modal"><span style="color:white">&times;</span></button>
+	</div>
+	<div class="modal-body" style="background:lightblue">
+	  <iframe id="general-modal-content" style="border-style:none;width:100%"></iframe>
+	</div>
+      </div>
+    </div>
+  </div>
+
+
+
   <!-- Help modal. -->
   <div id="help-modal" class="modal fade" role="dialog">
     <div class="modal-dialog">
@@ -99,7 +120,7 @@
           <h4 class="modal-title" style="color:white;font-size:medium">Help</h4>
           <button type="button" class="close" data-dismiss="modal"><span style="color:white">&times;</span></button>
 	</div>
-	<div class="modal-body" style="background:lightblue">
+	<div class="modal-body" id="modal-body-help" style="background:lightblue">
 
 
 <help-header>Overview</help-header>
@@ -136,12 +157,19 @@ arbitrary figure), you are warned that it may perhaps be time to
 update it.  To this end, support details appear below.</help-p>
 
 <help-p>If precisely two churches are selected, the bottom row shows
-the distance between them in miles.</help-p>
+the crow-flies distance between them in miles.</help-p>
     
 <help-p>The popup for each church includes a button which lets you
 limit the display to showing only churches within a given distance of
 the one you have selected.  More details appear on the prompt which
 lets you specify the distance of interest.</help-p>
+
+<help-p>The purple lozenges at the left of the menu serve both as a
+legend, to indicate the meaning of the colour-coding, and also as
+buttons.  The idea is that it might be possible to lodge general
+information about the areas against these buttons.  I presently have
+some sample data (albeit genuine, from the Office of National
+Statistics).</help-p>
   
 
 <help-header>About the data</help-header>
@@ -215,9 +243,11 @@ adequate.</help-p>
 <help-header>Version</help-header>
 
 <help-p style="text-align:center">
-Software: v$softwareVersion$<br>
+Software: $softwareVersion$<br>
 Data: $dataDate$</help-p>
-<help-p style="color:red;visibility:$outOfDateVisibility">WARNING: Data is more than $warnAfterDays$ old &mdash you may want to consider updating it.</help-p>
+<help-p style="color:red;visibility:$outOfDateVisibility$">WARNING: Data is more than $warnAfterDays$ days old &mdash; you may want to consider updating it.</help-p>
+
+
 	</div>
       </div>
     </div>
