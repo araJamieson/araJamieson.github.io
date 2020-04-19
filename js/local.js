@@ -1,6 +1,6 @@
 /******************************************************************************/
-var C_Version = 0.1
-var C_WarnAfterDays = 90;;
+var C_SoftwareVersion = 0.1;
+var C_WarnAfterDays = 90;
 
 
 var G_ChurchNames = [];
@@ -18,7 +18,6 @@ function onLoad ()
 {
     initialiseData();
     handleHeights();
-    setVersionInformation();
     makeMap();
     makeIcons();
     makeMarkers();
@@ -42,10 +41,12 @@ function onLoad ()
 /******************************************************************************/
 function initialiseData ()
 {
+    $("#select-churches-button").css("width", $("#help-button").css("width"));
+    
     for (var i = 0; i < G_ChurchDetailsIndex.length; ++i)
 	G_ChurchNames.push("");
     
-    for (var i = 0; i < G_ChurchDetailsIndex.length; ++i)
+    for (i = 0; i < G_ChurchDetailsIndex.length; ++i)
     {
 	var x = G_ChurchDetailsIndex[i];
 	G_ChurchNames[x.index] = x.name;
@@ -133,15 +134,16 @@ function makeMarkers ()
 	var parishBoundaryMarker = (0 !== x.dataBoundary.length) ? "* " : "";
 	var icon = G_Icons[x.deanery]; 
 	var marker = L.marker([x.latitude, x.longitude], {icon: icon, riseOnHover:true}).addTo(G_Map);
-	marker.myOriginalIcon = icon;
-	marker.myOnMap = true;
 	var popup = L.popup().setLatLng([x.latitude, x.longitude]).setContent(x.content);
-	popup.myChurchDetailsIndex = i;
 	marker.bindPopup(popup);
 	if (!isTouchScreen()) marker.bindTooltip(parishBoundaryMarker + G_ChurchNames[i]);
 	G_Markers.push(marker);
 	G_Popups.push(popup);
 	x.marker = marker;
+	marker.myOriginalIcon = icon;
+	marker.myOnMap = true;
+	marker.myPopup = popup;
+	popup.myChurchDetailsIndex = i;
     }
 }
 
@@ -177,28 +179,6 @@ function makeParishBoundaries ()
 }
 
 
-/******************************************************************************/
-function setVersionInformation ()
-{
-    //----------------------------------------------------------------------
-    var v = G_DateLastUpdated.split("/");
-    var dtUpdated = new Date(v[2], v[1] - 1, v[0]);
-    const formattedDate = dtUpdated.toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'}).replace(/ /g, '-');
-    $("#version").text("Version: Tool " + C_Version + " • Data " + formattedDate);
-
-
-
-    //----------------------------------------------------------------------
-    var today = new Date();
-    var daysSinceLastUpdate =  Math.floor((today.getTime() - dtUpdated.getTime()) / (1000 * 60 * 60 * 24));
-    if (daysSinceLastUpdate > C_WarnAfterDays) // Warning if too elderly.
-    {
-	$("#out-of-date-warning").html("&nbsp;&nbsp;WARNING: Data is at least " + C_WarnAfterDays + " days old.&nbsp;&nbsp;");
-	$("#out-of-date-warning").css("visibility", "visible");
-    }
-}
-
-
 
 
 
@@ -230,7 +210,7 @@ function accumulateInformationForSelectedItems ()
 
     for (var i = 0; i < G_SelectedItems.length; ++i)
     {
-	x = G_ChurchDetails[G_SelectedItems[i]];
+	var x = G_ChurchDetails[G_SelectedItems[i]];
 
 	if (0 === x.electoralRoll.length)
 	    dubiousElectoralRoll = true;
@@ -243,9 +223,9 @@ function accumulateInformationForSelectedItems ()
 	    totalParishPopulation += Number(x.parishPopulation);
     }
 
-    var electoralRoll = "Total electoral roll: " + totalElectoralRoll + (dubiousElectoralRoll ? " (Figure incomplete)" : "");
-    var totalParishPopulation = "Total parish pop: " + totalParishPopulation + (dubiousParishPopulation ? " (Figure incomplete)" : "");
-    var text = electoralRoll + " • " + totalParishPopulation;
+    totalElectoralRoll = "Total electoral roll: " + totalElectoralRoll + (dubiousElectoralRoll ? " (Figure incomplete)" : "");
+    totalParishPopulation = "Total parish pop: " + totalParishPopulation + (dubiousParishPopulation ? " (Figure incomplete)" : "");
+    var text = totalElectoralRoll + " • " + totalParishPopulation;
 
 
 
@@ -332,14 +312,14 @@ function popupClose (popup)
 
     var ix = popup.myChurchDetailsIndex;
     
-    if (null != G_ChurchDetails[ix].parishBoundary)
+    if (null !== G_ChurchDetails[ix].parishBoundary)
 	G_ChurchDetails[ix].parishBoundary.removeFrom(G_Map);
 
     G_Markers[ix].options.icon = G_Markers[ix].myOriginalIcon;
     G_Markers[ix].removeFrom(G_Map);
     G_Markers[ix].addTo(G_Map);
 
-    G_SelectedItems.push[ix];
+    G_SelectedItems.push(ix);
     G_SelectedItems.splice(G_SelectedItems.indexOf(ix), 1);
     accumulateInformationForSelectedItems();
 
@@ -355,7 +335,7 @@ function popupOpen (popup)
     
     var ix = popup.myChurchDetailsIndex;
 
-    if (null != G_ChurchDetails[ix].parishBoundary)
+    if (null !== G_ChurchDetails[ix].parishBoundary)
 	G_ChurchDetails[ix].parishBoundary.addTo(G_Map);
 
     G_Markers[ix].options.icon = G_Icons.Selected;
@@ -403,6 +383,17 @@ function addMarkerToMap (marker)
 
 
 /******************************************************************************/
+function dataOutOfDate ()
+{
+    var v = G_DateLastUpdated.split("/");
+    var dtUpdated = new Date(v[2], v[1] - 1, v[0]);
+    var today = new Date();
+    var daysSinceLastUpdate =  Math.floor((today.getTime() - dtUpdated.getTime()) / (1000 * 60 * 60 * 24));
+    return (daysSinceLastUpdate > C_WarnAfterDays);
+}
+
+    
+/******************************************************************************/
 function degreesToRadians (degrees)
 {
     return degrees * Math.PI / 180;
@@ -435,8 +426,8 @@ function distance (lat1, lng1, lat2, lng2)
 function handleHeights ()
 {
     setHeight();
-    window.onorientationchange = function() { setTimeout(setHeightHeight, 1000); };
-    window.onresize = function() { setTimeout(setHeightHeight, 100); };
+    window.onorientationchange = function() { setTimeout(setHeight, 1000); };
+    window.onresize = function() { setTimeout(setHeight, 100); };
 }
 
 
@@ -453,6 +444,7 @@ function removeMarkerFromMap (marker)
     if (marker.myOnMap)
     {
 	marker.myOnMap = false;
+	if (marker.myPopup.isOpen())  marker.closePopup();
 	marker.removeFrom(G_Map);
     }
 }
@@ -473,10 +465,27 @@ function setHeight ()
 /******************************************************************************/
 function showHelp ()
 {
+    //----------------------------------------------------------------------
+    var v = G_DateLastUpdated.split("/");
+    var dtUpdated = new Date(v[2], v[1] - 1, v[0]);
+    var formattedDate = dtUpdated.toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'}).replace(/ /g, '-');
+
+
+
+    //----------------------------------------------------------------------
     var s = $("#help-modal").html();
     var addr = "jamie" + "@" + "critos.co.uk";
     var text = "<a href='mail" + "to:" + addr + "'>" + addr + "</a>";
-    $("#help-modal").html(s.replace("$$$", text));
+    s = s.replace("$contact$", text);
+    s = s.replace("$softwareVersion$", "" + C_SoftwareVersion);
+    s = s.replace("$dataDate$", formattedDate);
+    s = s.replace("$outOfDateVisibility$", dataOutOfDate() ? "visible": "hidden");
+    s = s.replace("$warnDays$", "" + C_WarnAfterDays);
+
+
+
+    //----------------------------------------------------------------------
+    $("#help-modal").html(s);
     $("#help-modal").modal("show");
 }
 
@@ -498,53 +507,53 @@ function showHelp ()
 
 function decode (value)
 {
-  var PRECISION = 1e5
+    var PRECISION = 1e5;
 
-  var points = []
-  var lat = 0
-  var lon = 0
+    var points = [];
+    var lat = 0;
+    var lon = 0;
 
   var values = decodeIntegers( value, function( x, y ){
-    lat += x
-    lon += y
-    points.push([ lat / PRECISION, lon / PRECISION ])
-  })
+      lat += x;
+      lon += y;
+      points.push([ lat / PRECISION, lon / PRECISION ]);
+  });
 
-  return points
+    return points;
 }
 
-decodeSign = function( value )
+function decodeSign ( value )
 {
-  return value & 1 ? ~( value >>> 1 ) : ( value >>> 1 )
+    return value & 1 ? ~( value >>> 1 ) : ( value >>> 1 );
 }
 
-decodeIntegers = function( value, callback )
+function decodeIntegers ( value, callback )
 {
-  var values = 0
-  var x = 0
-  var y = 0
+    var values = 0;
+    var x = 0;
+    var y = 0;
 
-  var byte = 0
-  var current = 0
-  var bits = 0
+    var byte = 0;
+    var current = 0;
+    var bits = 0;
 
   for( var i = 0; i < value.length; i++ ) {
 
-    byte = value.charCodeAt( i ) - 63
-    current = current | (( byte & 0x1F ) << bits )
-    bits = bits + 5
+      byte = value.charCodeAt( i ) - 63;
+      current = current | (( byte & 0x1F ) << bits );
+      bits = bits + 5;
 
-    if( byte < 0x20 ) {
-      if( ++values & 1 ) {
-        x = decodeSign( current )
+      if( byte < 0x20 ) {
+	  if( ++values & 1 ) {
+              x = decodeSign( current );
       } else {
-        y = decodeSign( current )
-        callback( x, y )
+          y = decodeSign( current );
+          callback( x, y );
       }
-      current = 0
-      bits = 0
+	  current = 0;
+	  bits = 0;
     }
   }
 
-  return values
+    return values;
 }
