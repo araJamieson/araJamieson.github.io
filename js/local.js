@@ -573,15 +573,3 @@ function decodeIntegers ( value, callback )
 
     return values;
 }
-
-
-/******************************************************************************/
-function showBoroughInformation (borough)
-{
-    borough = borough.replace(" ", "");
-    $("#general-modal-title").text("General information for " + borough);
-    $("#general-modal-content").attr("src", borough + ".html");
-    $("#general-modal").modal("show");
-//    $("#general-modal").fullscreen();
-}
-
