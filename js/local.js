@@ -1,5 +1,5 @@
 /******************************************************************************/
-var C_SoftwareVersion = 0.1;
+var C_SoftwareVersion = 0.2;
 var C_WarnAfterDays = 90;
 
 
@@ -9,13 +9,42 @@ var G_InPopupCloseProcessing = false;
 var G_InPopupOpenProcessing = false;
 var G_Map;
 var G_Markers = [];
+var G_ParishColouring = ["", "green", "yellow", "orange", "red"]; // Per GC value.
 var G_Popups = [];
 var G_SelectedItems = [];
+var G_ShowingPopups;
+
+
+
+/******************************************************************************/
+function showPopupsChangeHandler ()
+{
+    G_ShowingPopups = $("#show-popups").is(":checked");
+
+    G_InPopupCloseProcessing = true;
+    G_InPopupOpenProcessing = true;
+
+    if (G_ShowingPopups)
+	for (var i = 0; i < G_SelectedItems.length; ++i)
+	    G_Popups[G_SelectedItems[i]].addTo(G_Map);
+    else
+    {
+	for (var i = 0; i < G_SelectedItems.length; ++i)
+	{
+	    G_Popups[G_SelectedItems[i]].removeFrom(G_Map);
+	}
+    }
+
+    G_InPopupCloseProcessing = false;
+    G_InPopupOpenProcessing = false;
+}
 
 
 /******************************************************************************/
 function onLoad ()
 {
+    $("#show-popups").prop("checked", true);
+    G_ShowingPopups = $("#show-popups").is(":checked");
     initialiseData();
     handleHeights();
     makeMap();
@@ -57,50 +86,242 @@ function initialiseData ()
 /******************************************************************************/
 function makeIcons ()
 {
-    G_Icons.Hackney =
+    /*************************************************************************/
+    var iconSize = [23, 42];
+    var iconAnchor = [12, 42];
+    var shadowSize = [48, 57];
+    var shadowAnchor = [12, 45];
+    var popupAnchor = [0, -44]; // Don't think this is used -- the popup belongs to the Sel version of the icon.
+    
+
+    
+    /*************************************************************************/
+    G_Icons.HackneyLiberal =
 	L.icon({
-	    iconUrl:      'images/hackney.png',
+	    iconUrl:      'images/hackneyLiberal.png',
 	    shadowUrl:    'images/shadow.png',
-	    iconSize:     [60, 100],
-	    shadowSize:   [60, 100],
-	    iconAnchor:   [30, 50],  // Point of the icon which will correspond to marker's location.
-	    shadowAnchor: [30, 50],  // Ditto for the shadow.
-	    popupAnchor:  [-5, -50]  // Point from which the popup should open relative to the iconAnchor.
+	    iconSize:     iconSize,
+	    shadowSize:   shadowSize,
+	    iconAnchor:   iconAnchor,
+	    shadowAnchor: shadowAnchor,
+	    popupAnchor:  popupAnchor
 	});
 
-    G_Icons.Islington =
+    G_Icons.HackneyEvangelical =
 	L.icon({
-	    iconUrl:      'images/islington.png',
+	    iconUrl:      'images/hackneyEvangelical.png',
 	    shadowUrl:    'images/shadow.png',
-	    iconSize:     [60, 100],
-	    shadowSize:   [60, 100],
-	    iconAnchor:   [30, 50],  // Point of the icon which will correspond to marker's location.
-	    shadowAnchor: [30, 50],  // Ditto for the shadow.
-	    popupAnchor:  [-5, -50]  // Point from which the popup should open relative to the iconAnchor.
+	    iconSize:     iconSize,
+	    shadowSize:   shadowSize,
+	    iconAnchor:   iconAnchor,
+	    shadowAnchor: shadowAnchor,
+	    popupAnchor:  popupAnchor
 	});
 
-    G_Icons.TowerHamlets =
+    G_Icons.HackneyHigh =
 	L.icon({
-	    iconUrl:      'images/towerHamlets.png',
+	    iconUrl:      'images/hackneyHigh.png',
 	    shadowUrl:    'images/shadow.png',
-	    iconSize:     [60, 100],
-	    shadowSize:   [60, 100],
-	    iconAnchor:   [30, 50],  // Point of the icon which will correspond to marker's location.
-	    shadowAnchor: [30, 50],  // Ditto for the shadow.
-	    popupAnchor:  [-5, -50]  // Point from which the popup should open relative to the iconAnchor.
+	    iconSize:     iconSize,
+	    shadowSize:   shadowSize,
+	    iconAnchor:   iconAnchor,
+	    shadowAnchor: shadowAnchor,
+	    popupAnchor:  popupAnchor
 	});
 
-    G_Icons.Selected =
+
+
+    /*************************************************************************/
+    G_Icons.IslingtonLiberal =
 	L.icon({
-	    iconUrl:      'images/selected.png',
+	    iconUrl:      'images/islingtonLiberal.png',
 	    shadowUrl:    'images/shadow.png',
-	    iconSize:     [60, 100],
-	    shadowSize:   [60, 100],
-	    iconAnchor:   [30, 50],  // Point of the icon which will correspond to marker's location.
-	    shadowAnchor: [30, 50],  // Ditto for the shadow.
-	    popupAnchor:  [-5, -50]  // Point from which the popup should open relative to the iconAnchor.
+	    iconSize:     iconSize,
+	    shadowSize:   shadowSize,
+	    iconAnchor:   iconAnchor,
+	    shadowAnchor: shadowAnchor,
+	    popupAnchor:  popupAnchor
 	});
 
+    G_Icons.IslingtonEvangelical =
+	L.icon({
+	    iconUrl:      'images/islingtonEvangelical.png',
+	    shadowUrl:    'images/shadow.png',
+	    iconSize:     iconSize,
+	    shadowSize:   shadowSize,
+	    iconAnchor:   iconAnchor,
+	    shadowAnchor: shadowAnchor,
+	    popupAnchor:  popupAnchor
+	});
+
+    G_Icons.IslingtonHigh =
+	L.icon({
+	    iconUrl:      'images/islingtonHigh.png',
+	    shadowUrl:    'images/shadow.png',
+	    iconSize:     iconSize,
+	    shadowSize:   shadowSize,
+	    iconAnchor:   iconAnchor,
+	    shadowAnchor: shadowAnchor,
+	    popupAnchor:  popupAnchor
+	});
+
+
+
+
+    /*************************************************************************/
+    G_Icons.TowerHamletsLiberal =
+	L.icon({
+	    iconUrl:      'images/towerHamletsLiberal.png',
+	    shadowUrl:    'images/shadow.png',
+	    iconSize:     iconSize,
+	    shadowSize:   shadowSize,
+	    iconAnchor:   iconAnchor,
+	    shadowAnchor: shadowAnchor,
+	    popupAnchor:  popupAnchor
+	});
+
+    G_Icons.TowerHamletsEvangelical =
+	L.icon({
+	    iconUrl:      'images/towerHamletsEvangelical.png',
+	    shadowUrl:    'images/shadow.png',
+	    iconSize:     iconSize,
+	    shadowSize:   shadowSize,
+	    iconAnchor:   iconAnchor,
+	    shadowAnchor: shadowAnchor,
+	    popupAnchor:  popupAnchor
+	});
+
+    G_Icons.TowerHamletsHigh =
+	L.icon({
+	    iconUrl:      'images/towerHamletsHigh.png',
+	    shadowUrl:    'images/shadow.png',
+	    iconSize:     iconSize,
+	    shadowSize:   shadowSize,
+	    iconAnchor:   iconAnchor,
+	    shadowAnchor: shadowAnchor,
+	    popupAnchor:  popupAnchor
+	});
+
+
+
+    /*************************************************************************/
+    /*************************************************************************/
+    /*************************************************************************/
+    /*************************************************************************/
+    iconSize = [38, 58];
+    iconAnchor = [19, 50];
+    shadowSize = [38, 58];
+    //shadowAnchor = [12, 42];
+    popupAnchor = [0, -52];
+    
+
+    
+
+    /*************************************************************************/
+    G_Icons.HackneyLiberalSel =
+	L.icon({
+	    iconUrl:      'images/hackneyLiberalSel.png',
+	    shadowUrl:    'images/shadow.png',
+	    iconSize:     iconSize,
+	    shadowSize:   shadowSize,
+	    iconAnchor:   iconAnchor,
+	    shadowAnchor: shadowAnchor,
+	    popupAnchor:  popupAnchor
+	});
+
+    G_Icons.HackneyEvangelicalSel =
+	L.icon({
+	    iconUrl:      'images/hackneyEvangelicalSel.png',
+	    shadowUrl:    'images/shadow.png',
+	    iconSize:     iconSize,
+	    shadowSize:   shadowSize,
+	    iconAnchor:   iconAnchor,
+	    shadowAnchor: shadowAnchor,
+	    popupAnchor:  popupAnchor
+	});
+
+    G_Icons.HackneyHighSel =
+	L.icon({
+	    iconUrl:      'images/hackneyHighSel.png',
+	    shadowUrl:    'images/shadow.png',
+	    iconSize:     iconSize,
+	    shadowSize:   shadowSize,
+	    iconAnchor:   iconAnchor,
+	    shadowAnchor: shadowAnchor,
+	    popupAnchor:  popupAnchor
+	});
+
+
+
+    /*************************************************************************/
+    G_Icons.IslingtonLiberalSel =
+	L.icon({
+	    iconUrl:      'images/islingtonLiberalSel.png',
+	    shadowUrl:    'images/shadow.png',
+	    iconSize:     iconSize,
+	    shadowSize:   shadowSize,
+	    iconAnchor:   iconAnchor,
+	    shadowAnchor: shadowAnchor,
+	    popupAnchor:  popupAnchor
+	});
+
+    G_Icons.IslingtonEvangelicalSel =
+	L.icon({
+	    iconUrl:      'images/islingtonEvangelicalSel.png',
+	    shadowUrl:    'images/shadow.png',
+	    iconSize:     iconSize,
+	    shadowSize:   shadowSize,
+	    iconAnchor:   iconAnchor,
+	    shadowAnchor: shadowAnchor,
+	    popupAnchor:  popupAnchor
+	});
+
+    G_Icons.IslingtonHighSel =
+	L.icon({
+	    iconUrl:      'images/islingtonHighSel.png',
+	    shadowUrl:    'images/shadow.png',
+	    iconSize:     iconSize,
+	    shadowSize:   shadowSize,
+	    iconAnchor:   iconAnchor,
+	    shadowAnchor: shadowAnchor,
+	    popupAnchor:  popupAnchor
+	});
+
+
+
+    /*************************************************************************/
+    G_Icons.TowerHamletsLiberalSel =
+	L.icon({
+	    iconUrl:      'images/towerHamletsLiberalSel.png',
+	    shadowUrl:    'images/shadow.png',
+	    iconSize:     iconSize,
+	    shadowSize:   shadowSize,
+	    iconAnchor:   iconAnchor,
+	    shadowAnchor: shadowAnchor,
+	    popupAnchor:  popupAnchor
+	});
+
+    G_Icons.TowerHamletsEvangelicalSel =
+	L.icon({
+	    iconUrl:      'images/towerHamletsEvangelicalSel.png',
+	    shadowUrl:    'images/shadow.png',
+	    iconSize:     iconSize,
+	    shadowSize:   shadowSize,
+	    iconAnchor:   iconAnchor,
+	    shadowAnchor: shadowAnchor,
+	    popupAnchor:  popupAnchor
+	});
+
+    G_Icons.TowerHamletsHighSel =
+	L.icon({
+	    iconUrl:      'images/towerHamletsHighSel.png',
+	    shadowUrl:    'images/shadow.png',
+	    iconSize:     iconSize,
+	    shadowSize:   shadowSize,
+	    iconAnchor:   iconAnchor,
+	    shadowAnchor: shadowAnchor,
+	    popupAnchor:  popupAnchor
+	});
 }
 
 
@@ -132,7 +353,7 @@ function makeMarkers ()
     {
 	var x = G_ChurchDetails[i];
 	var parishBoundaryMarker = (0 !== x.dataBoundary.length) ? "* " : "";
-	var icon = G_Icons[x.deanery]; 
+	var icon = G_Icons[x.deanery + x.churchmanship];
 	var marker = L.marker([x.latitude, x.longitude], {icon: icon, riseOnHover:true}).addTo(G_Map);
 	var popup = L.popup().setLatLng([x.latitude, x.longitude]).setContent(x.content);
 	marker.bindPopup(popup);
@@ -172,7 +393,7 @@ function makeParishBoundaries ()
 	if (0 !== x.dataBoundary.length)
 	{
 	    var boundaryElts = decode(G_ChurchDetails[i].dataBoundary);
-	    var polygon = L.polygon(boundaryElts, {color: 'red'});
+	    var polygon = L.polygon(boundaryElts, {color: G_ParishColouring[G_ChurchDetails[i].gc]});
 	    x.parishBoundary = polygon;
 	}
     }
@@ -242,7 +463,7 @@ function accumulateInformationForSelectedItems ()
 
     
     //----------------------------------------------------------------------
-    text = dist + text;
+    text = "Churches: " + G_SelectedItems.length + " • " + dist + text;
     $("#accumulated-data").text(text);
     $("#accumulated-data").css("visibility", "visible");
 }
@@ -337,10 +558,10 @@ function popupOpen (popup)
     if (null !== G_ChurchDetails[ix].parishBoundary)
 	G_ChurchDetails[ix].parishBoundary.addTo(G_Map);
 
-    G_Markers[ix].options.icon = G_Icons.Selected;
+    G_Markers[ix].options.icon = G_Icons[G_ChurchDetails[ix].deanery + G_ChurchDetails[ix].churchmanship + "Sel"];
     G_Markers[ix].removeFrom(G_Map);
     G_Markers[ix].addTo(G_Map);
-    G_Popups[ix].openOn(G_Map);
+    if (G_ShowingPopups) G_Popups[ix].openOn(G_Map);
 
     G_SelectedItems.push(ix);
     accumulateInformationForSelectedItems();
@@ -495,7 +716,7 @@ function showHelp ()
     s = s.replace("$contact$", text);
     s = s.replace("$softwareVersion$", "" + C_SoftwareVersion);
     s = s.replace("$dataDate$", formattedDate);
-    s = s.replace("$outOfDateVisibility$", dataOutOfDate() ? "visible": "hidden");
+    s = s.replace("$outOfDateVisibility$", dataOutOfDate() ? "display": "none");
     s = s.replace("$warnAfterDays$", "" + C_WarnAfterDays);
 
 
