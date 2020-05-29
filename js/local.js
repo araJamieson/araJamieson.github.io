@@ -17,30 +17,6 @@ var G_ShowingPopups;
 
 
 /******************************************************************************/
-function showPopupsChangeHandler ()
-{
-    G_ShowingPopups = $("#show-popups").is(":checked");
-
-    G_InPopupCloseProcessing = true;
-    G_InPopupOpenProcessing = true;
-
-    if (G_ShowingPopups)
-	for (var i = 0; i < G_SelectedItems.length; ++i)
-	    G_Popups[G_SelectedItems[i]].addTo(G_Map);
-    else
-    {
-	for (var i = 0; i < G_SelectedItems.length; ++i)
-	{
-	    G_Popups[G_SelectedItems[i]].removeFrom(G_Map);
-	}
-    }
-
-    G_InPopupCloseProcessing = false;
-    G_InPopupOpenProcessing = false;
-}
-
-
-/******************************************************************************/
 function onLoad ()
 {
     $("#show-popups").prop("checked", true);
@@ -532,7 +508,7 @@ function popupClose (popup)
     G_InPopupCloseProcessing = true;
 
     var ix = popup.myChurchDetailsIndex;
-    
+
     if (null !== G_ChurchDetails[ix].parishBoundary)
 	G_ChurchDetails[ix].parishBoundary.removeFrom(G_Map);
 
@@ -555,6 +531,13 @@ function popupOpen (popup)
     
     var ix = popup.myChurchDetailsIndex;
 
+    if (G_SelectedItems.includes(ix)) // User has clicked on an already-selected church.
+    {
+	G_InPopupOpenProcessing = false;
+	popupClose(popup);
+	return;
+    }
+    
     if (null !== G_ChurchDetails[ix].parishBoundary)
 	G_ChurchDetails[ix].parishBoundary.addTo(G_Map);
 
@@ -724,6 +707,30 @@ function showHelp ()
     //----------------------------------------------------------------------
     $("#help-modal").html(s);
     $("#help-modal").modal("show");
+}
+
+
+/******************************************************************************/
+function showPopupsChangeHandler ()
+{
+    G_ShowingPopups = $("#show-popups").is(":checked");
+
+    G_InPopupCloseProcessing = true;
+    G_InPopupOpenProcessing = true;
+
+    if (G_ShowingPopups)
+	for (var i = 0; i < G_SelectedItems.length; ++i)
+	    G_Popups[G_SelectedItems[i]].addTo(G_Map);
+    else
+    {
+	for (var i = 0; i < G_SelectedItems.length; ++i)
+	{
+	    G_Popups[G_SelectedItems[i]].removeFrom(G_Map);
+	}
+    }
+
+    G_InPopupCloseProcessing = false;
+    G_InPopupOpenProcessing = false;
 }
 
 
