@@ -52,9 +52,10 @@
     <div class="navbar-header">
       <a class="navbar-brand" href="#"><img id="logo" src="./images/logo.png" alt="logo"><span id="brand"> Deanery map</span></a>
       <span class="navbar-text">&nbsp;&nbsp;
-	<button class="legend" title="Hackney information" onclick="javascript:showBoroughInformation('Hackney')" style="color:lightgreen">Hackney</button>&nbsp;
-	<button class="legend" title="Islington information" onclick="javascript:showBoroughInformation('Islington')" style="color:yellow">Islington</button>&nbsp;
-	<button class="legend" title="Tower Hamlets information" onclick="javascript:showBoroughInformation('Tower Hamlets')" style="color:#ff8080">Tower Hamlets</button>&nbsp;
+	<button class="legend" title="Hackney information" onclick="javascript:showBoroughInformation('Hackney')" style="color:lightPink">Hackney</button>&nbsp;
+	<button class="legend" title="Islington information" onclick="javascript:showBoroughInformation('Islington')" style="color:fuchsia">Islington</button>&nbsp;
+	<button class="legend" title="Tower Hamlets information" onclick="javascript:showBoroughInformation('Tower Hamlets')" style="color:yellowGreen">Tower Hamlets</button>&nbsp; &nbsp;
+	<label style="color:black"><input id="show-popups" type="checkbox" onChange="showPopupsChangeHandler()"> Show popups</label>
       </span>
     </div>
 
@@ -89,8 +90,8 @@
     </div>
 
     <div id="footer" class="row logo-color">
-      <div class="col-12">
-	<span id="accumulated-data" style="color:yellow">&nbsp;</span>
+      <div class="col-12" style="text-align:right">
+	<span id="accumulated-data" style="color:yellow;text-align:right">&nbsp;</span>
       </div>
     </div>
   </div>
@@ -114,7 +115,7 @@
 
 
   <!-- Help modal. -->
-  <div id="help-modal" class="modal fade" role="dialog">
+  <div id="help-modal" class="modal fade" role="dialog" style="filter: drop-shadow(5px 5px 4px black);">
     <div class="modal-dialog">
       <div class="modal-content" style="border:2px solid black" >
 	<div class="modal-header" style="background:blue">
@@ -126,51 +127,54 @@
 
 <help-header>Overview</help-header>
 
+<help-p style="text-align:center; font-weight:bold">Tool version: $softwareVersion$; &nbsp; Data dated: $dataDate$.</help-p>
+
+<help-p style="display:$outOfDateVisibility$;text-align:center;border:1px solid black;background:red;color:yellow;font-weight:bold;padding:10px;margin-bottom:10px;">
+  Data is more than $warnAfterDays$ days old.
+</help-p>
+
 <help-p>This works in much the same way as Google maps (ie you can
 scroll, zoom, etc).</p>
 
 <help-p>The icons show churches.  They are
-colour-coded: <span style="color:green;font-weight:bold">GREEN</span>
-for Hackney deanery, <span style="color:yellow;font-weight:bold">YELLOW</span> for
-Islington, and <span style="color:#cc6699;font-weight:bold">PINK</span>
-for Tower Hamlets.</help-p>
+  colour-coded: <span style="color:lightPink;font-weight:bold">PINK</span>
+  for Hackney deanery, <span style="color:fuchsia;font-weight:bold">PURPLE</span> for
+  Islington, and <span style="color:yellowGreen;font-weight:bold">GREEN</span>
+  for Tower Hamlets.  Each carries an icon to indicate the type of church &mdash;
+  a candle for high church, a book for evangelical, and a handshake for liberal.
+</help-p>
 
 <help-p>If you click on a church, a popup will appear giving brief
-details.  Items in blue on the popup are hyperlinks to pages where
-more detailed information is available.  The information available
-differs between the various churches, according to what I was able to
-find.  Where a church has associated parish bounday information, the
-parish boundary is displayed as well.</help-p>
+  details.  Items in blue on the popup are hyperlinks to pages where
+  more detailed information is available.  The information available
+  differs between the various churches, according to what I was able to
+  find.  Where a church has associated parish boundary information, the
+  parish boundary is displayed as well.</help-p>
+
+<help-p>Actually, that&rsquo;s not <em>quite</em> true: the <em>Show
+  popups</em> checkbox at the top of the screen controls whether
+  popups appear or not.  This makes it possible to avoid clutting the
+  screen when the popup information is not required.</help-p>
+
+<help-p>The popup for each church includes a button which lets you
+  limit the display to showing only churches within a given distance of
+  the one you have selected.  More details appear on the prompt which
+  lets you specify the distance of interest.</help-p>
 
 <help-p>A church is regarded is &lsquo;selected&rsquo; once you have
-displayed its popup, and it remains selected until you close the popup
-(which you do by clicking on the cross at the top right).  You can
-have more than one church selected at the same time.  Certain
-aggregate data about the selected churches is displayed across the
-bottom of the screen.  If only <em>some</em> of the selected churches
-can supply the data which is being aggregated, the message at the
-bottom of the screen warns that the information is incomplete.</help-p>
+  displayed its popup, and it remains selected until you click on it
+  again (or equivalently, if the popup is visible, until you close the
+  popup by clicking on the cross at the top right).</help-p>
 
-<help-p>The bottom row of the screen also indicates the current
-version of the tool, and the date when the data it relies upon
-was last updated.  If the data is more than three months old (an
-arbitrary figure), you are warned that it may perhaps be time to
-update it.  To this end, support details appear below.</help-p>
+<help-p>So long as one or more churches are selected, aggregate
+  information about the churches will appear at the bottom of the page.</help-p>
 
-<help-p>If precisely two churches are selected, the bottom row shows
-the crow-flies distance between them in miles.</help-p>
-    
-<help-p>The popup for each church includes a button which lets you
-limit the display to showing only churches within a given distance of
-the one you have selected.  More details appear on the prompt which
-lets you specify the distance of interest.</help-p>
-
-<help-p>The purple lozenges at the left of the menu serve both as a
-legend, to indicate the meaning of the colour-coding, and also as
-buttons.  The idea is that it might be possible to lodge general
-information about the areas against these buttons.  I presently have
-some sample data (albeit genuine, from the Office of National
-Statistics).</help-p>
+<help-p>The purple lozenges at the left of the menu bar serve both as
+  a legend, to indicate the meaning of the colour-coding, and also as
+  buttons.  The idea is that it might be possible to lodge general
+  information about the deaneries against these buttons.  I presently
+  have some sample data (albeit genuine, from the Office of National
+  Statistics).</help-p>
   
 
 <help-header>About the data</help-header>
@@ -238,17 +242,6 @@ adequate.</help-p>
 <help-p>For help and support, contact me at $contact$.</help-p>
 
 <help-p><span style="text-decoration:underline">&lsquo;Jamie&rsquo; Jamieson</span></help-p>
-
-<hr>
-
-<help-header>Version</help-header>
-
-<help-p style="text-align:center">
-Software: $softwareVersion$<br>
-Data: $dataDate$</help-p>
-<help-p style="color:red;visibility:$outOfDateVisibility$">WARNING: Data is more than $warnAfterDays$ days old &mdash; you may want to consider updating it.</help-p>
-
-
 	</div>
       </div>
     </div>
