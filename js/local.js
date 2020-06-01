@@ -9,7 +9,7 @@ var G_InPopupCloseProcessing = false;
 var G_InPopupOpenProcessing = false;
 var G_Map;
 var G_Markers = [];
-var G_ParishColouring = ["", "green", "yellow", "orange", "red"]; // Per GC value.
+var G_ParishColouring = ["grey", "green", "yellow", "orange", "red"]; // Per GC value.
 var G_Popups = [];
 var G_SelectedItems = [];
 var G_ShowingPopups;
@@ -106,6 +106,18 @@ function makeIcons ()
 	});
 
 
+    G_Icons.HackneyUnknown =
+	L.icon({
+	    iconUrl:      'images/hackneyUnknown.png',
+	    shadowUrl:    'images/shadow.png',
+	    iconSize:     iconSize,
+	    shadowSize:   shadowSize,
+	    iconAnchor:   iconAnchor,
+	    shadowAnchor: shadowAnchor,
+	    popupAnchor:  popupAnchor
+	});
+
+
 
     /*************************************************************************/
     G_Icons.IslingtonLiberal =
@@ -141,6 +153,16 @@ function makeIcons ()
 	    popupAnchor:  popupAnchor
 	});
 
+    G_Icons.IslingtonUnknown =
+	L.icon({
+	    iconUrl:      'images/islingtonUnknown.png',
+	    shadowUrl:    'images/shadow.png',
+	    iconSize:     iconSize,
+	    shadowSize:   shadowSize,
+	    iconAnchor:   iconAnchor,
+	    shadowAnchor: shadowAnchor,
+	    popupAnchor:  popupAnchor
+	});
 
 
 
@@ -178,6 +200,16 @@ function makeIcons ()
 	    popupAnchor:  popupAnchor
 	});
 
+    G_Icons.TowerHamletsUnknown =
+	L.icon({
+	    iconUrl:      'images/towerHamletsUnknown.png',
+	    shadowUrl:    'images/shadow.png',
+	    iconSize:     iconSize,
+	    shadowSize:   shadowSize,
+	    iconAnchor:   iconAnchor,
+	    shadowAnchor: shadowAnchor,
+	    popupAnchor:  popupAnchor
+	});
 
 
     /*************************************************************************/
@@ -227,6 +259,17 @@ function makeIcons ()
 	    popupAnchor:  popupAnchor
 	});
 
+    G_Icons.HackneyUnknownSel =
+	L.icon({
+	    iconUrl:      'images/hackneyUnknownSel.png',
+	    shadowUrl:    'images/shadow.png',
+	    iconSize:     iconSize,
+	    shadowSize:   shadowSize,
+	    iconAnchor:   iconAnchor,
+	    shadowAnchor: shadowAnchor,
+	    popupAnchor:  popupAnchor
+	});
+
 
 
     /*************************************************************************/
@@ -255,6 +298,17 @@ function makeIcons ()
     G_Icons.IslingtonHighSel =
 	L.icon({
 	    iconUrl:      'images/islingtonHighSel.png',
+	    shadowUrl:    'images/shadow.png',
+	    iconSize:     iconSize,
+	    shadowSize:   shadowSize,
+	    iconAnchor:   iconAnchor,
+	    shadowAnchor: shadowAnchor,
+	    popupAnchor:  popupAnchor
+	});
+
+    G_Icons.IslingtonUnknownSel =
+	L.icon({
+	    iconUrl:      'images/islingtonUnknownSel.png',
 	    shadowUrl:    'images/shadow.png',
 	    iconSize:     iconSize,
 	    shadowSize:   shadowSize,
@@ -298,6 +352,18 @@ function makeIcons ()
 	    shadowAnchor: shadowAnchor,
 	    popupAnchor:  popupAnchor
 	});
+
+    G_Icons.TowerHamletsUnknownSel =
+	L.icon({
+	    iconUrl:      'images/towerHamletsUnknownSel.png',
+	    shadowUrl:    'images/shadow.png',
+	    iconSize:     iconSize,
+	    shadowSize:   shadowSize,
+	    iconAnchor:   iconAnchor,
+	    shadowAnchor: shadowAnchor,
+	    popupAnchor:  popupAnchor
+	});
+
 }
 
 
