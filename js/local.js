@@ -873,7 +873,7 @@ function showDeaneryCharts ()
     /*************************************************************************/
     var options =
     {
-        title: deanery + ": Actual / projected population by year and age group",
+        title: G_Deanery + ": Actual / projected population by year and age group",
         hAxis: {titleTextStyle: {color: "#333"}, format:"#"},
         vAxis: {minValue: 0},
 	chartArea: {"width":"80%", "height":"80%"},
@@ -890,7 +890,7 @@ function showDeaneryCharts ()
     /*************************************************************************/
     options =
     {
-        title: deanery + ": Trends in religion",
+        title: G_Deanery + ": Trends in religion",
         hAxis: {titleTextStyle: {color: "#333"}, format:"#"},
         vAxis: {minValue: 0},
 	chartArea: {"width":"80%", "height":"80%"},
