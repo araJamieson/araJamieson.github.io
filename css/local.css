@@ -9,12 +9,6 @@
 }
 
 
-#modal-body-help
-{
-    overflow: hidden !important;
-    overflow-y: auto !important;
-}
-
 #the-map {
     cursor:pointer;
 }
@@ -59,12 +53,6 @@ img.centred {
 }
 
 
-.dropshadowimg {
-    width:200px;
-    box-shadow: 5px 5px 5px #999;
-}
-
-
 .legend
 {
     font-size:small;
@@ -83,9 +71,22 @@ img.centred {
 }
 
 
+.limit-width {
+    max-width:65ch;
+}
+
+
 .logo-color
 {
     background: #9768a1;
+}
+
+
+.modal-body-scroll
+{
+    overflow: hidden !important;
+    overflow-y: auto !important;
+    max-height: 90vh;
 }
 
 
