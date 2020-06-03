@@ -16,6 +16,16 @@ var G_ShowingPopups;
 
 
 
+
+
+/******************************************************************************/
+/******************************************************************************/
+/**                                                                          **/
+/**                                  Onload                                  **/
+/**                                                                          **/
+/******************************************************************************/
+/******************************************************************************/
+
 /******************************************************************************/
 function onLoad ()
 {
@@ -29,6 +39,7 @@ function onLoad ()
     makeMenu();
     makeParishBoundaries();
     autoClosePopups(false);
+    $("#general-modal").on("shown.bs.modal", shownDeaneryModal);
 }
 
 
@@ -797,6 +808,108 @@ function showPopupsChangeHandler ()
 
     G_InPopupCloseProcessing = false;
     G_InPopupOpenProcessing = false;
+}
+
+
+
+
+
+/******************************************************************************/
+/******************************************************************************/
+/**                                                                          **/
+/**                            Deanery statistics                            **/
+/**                                                                          **/
+/******************************************************************************/
+/******************************************************************************/
+
+
+/******************************************************************************/
+var G_Deanery; // The deanery currently selected for display.
+var G_PopulationChart;
+var G_ReligionChart;
+
+
+/******************************************************************************/
+function shownDeaneryModal ()
+{
+    showDeaneryCharts();
+}
+
+
+/******************************************************************************/
+/* Called when closing the deanery modal. */
+
+function closeDeaneryModal ()
+{
+    G_PopulationChart.clearChart();
+    G_ReligionChart.clearChart();
+}
+
+
+/******************************************************************************/
+/* The per-deanery buttons are disabled on startup, because we need to have
+   loaded Google charting stuff before they can be used.  This is called when
+   the load is complete, to enable the buttons. */
+
+function enableDeaneryButtons ()
+{
+    $(".legend").prop("disabled", false);
+}
+
+
+/******************************************************************************/
+function showDeaneryCharts ()
+{
+    /*************************************************************************/
+    $("#general-modal-body").scrollTop(0);
+
+
+
+    /*************************************************************************/
+    var deanery = G_Deanery;
+
+
+
+    /*************************************************************************/
+    var options =
+    {
+        title: deanery + ": Actual / projected population by year and age group",
+        hAxis: {titleTextStyle: {color: "#333"}, format:"#"},
+        vAxis: {minValue: 0},
+	chartArea: {"width":"80%", "height":"80%"},
+        isStacked: true,
+        pointSize: 5
+    };
+
+    deanery = deanery.replace(" ", "");
+    G_PopulationChart = new google.visualization.AreaChart(document.getElementById("population-chart"));
+    G_PopulationChart.draw(google.visualization.arrayToDataTable(G_PopulationByDeanery[deanery]), options);
+
+
+
+    /*************************************************************************/
+    options =
+    {
+        title: deanery + ": Trends in religion",
+        hAxis: {titleTextStyle: {color: "#333"}, format:"#"},
+        vAxis: {minValue: 0},
+	chartArea: {"width":"80%", "height":"80%"},
+	colors: ["red", "green", "blue", "orange", "pink", "teal", "black", "brown"],
+        pointSize: 5
+    };
+
+    G_ReligionChart = new google.visualization.LineChart(document.getElementById("religion-chart"));
+    G_ReligionChart.draw(google.visualization.arrayToDataTable(G_ReligionTrends[deanery]), options);
+}
+
+
+/******************************************************************************/
+function showDeaneryInformation (deanery)
+{
+    /*************************************************************************/
+    $("#general-modal-title").text(deanery + " Deanery");
+    $("#general-modal").modal("show");
+    G_Deanery = deanery;
 }
 
 
