@@ -878,7 +878,8 @@ function showDeaneryCharts ()
         vAxis: {minValue: 0},
 	chartArea: {"width":"80%", "height":"80%"},
         isStacked: true,
-        pointSize: 5
+        pointSize: 5,
+	legend: {position: "top"}
     };
 
     deanery = deanery.replace(" ", "");
@@ -895,7 +896,8 @@ function showDeaneryCharts ()
         vAxis: {minValue: 0},
 	chartArea: {"width":"80%", "height":"80%"},
 	colors: ["red", "green", "blue", "orange", "pink", "teal", "black", "brown"],
-        pointSize: 5
+        pointSize: 5,
+	legend: {position: "top"}
     };
 
     G_ReligionChart = new google.visualization.LineChart(document.getElementById("religion-chart"));
