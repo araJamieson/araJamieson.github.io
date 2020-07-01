@@ -61,14 +61,20 @@
   <!-- Navigation -->
   <nav id="navbar" class="navbar navbar-expand navbar-light c-of-e-background xfixed-top">
     <div class="navbar-header">
-      <a class="navbar-brand" href="#"><img id="logo" src="./images/logo.png" alt="logo"><span id="brand"> Deanery map</span></a>
-      <span class="navbar-text">&nbsp;&nbsp;
-	<button disabled class="legend" title="Hackney information" onclick="javascript:showDeaneryInformation('Hackney')" style="color:lightPink">Hackney</button>&nbsp;
-	<button disabled class="legend" title="Islington information" onclick="javascript:showDeaneryInformation('Islington')" style="color:fuchsia">Islington</button>&nbsp;
-	<button disabled class="legend" title="Tower Hamlets information" onclick="javascript:showDeaneryInformation('Tower Hamlets')" style="color:yellowGreen">Tower Hamlets</button>&nbsp; &nbsp;
-	<label style="color:black"><input id="show-popups" type="checkbox" onChange="showPopupsChangeHandler()"> Show popups</label>&nbsp; 
-	<label style="color:black"><input id="track-me" type="checkbox" onChange="trackMeChangeHandler()"> Track me</label>
-      </span>
+      <table class="navbar-text">&nbsp;&nbsp;
+	<tr>
+	  <td style="display:flex; align-items:center">
+	    <a class="navbar-brand" href="#"><img id="logo" src="./images/logo.png" alt="logo"><span id="brand"> Deanery map</span></a>
+	    <button disabled class="legend" title="Hackney information" onclick="javascript:showDeaneryInformation('Hackney')" style="color:lightPink">Hackney</button>&nbsp;
+	    <button disabled class="legend" title="Islington information" onclick="javascript:showDeaneryInformation('Islington')" style="color:fuchsia">Islington</button>&nbsp;
+	    <button disabled class="legend" title="Tower Hamlets information" onclick="javascript:showDeaneryInformation('Tower Hamlets')" style="color:yellowGreen">Tower<br>Hamlets</button>&nbsp; &nbsp;
+	  </td>
+	  <td>
+	    <label style="color:black"><input id="show-popups" type="checkbox" onChange="showPopupsChangeHandler()"> Show popups</label>&nbsp; <br>
+	    <label style="color:black"><input id="track-me" type="checkbox" onChange="trackMeChangeHandler()"> Track me</label>
+	  </td>
+	</tr>
+      </table>
     </div>
 
     <ul class="nav navbar-nav ml-auto">    
