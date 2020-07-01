@@ -61,7 +61,7 @@ function onLoad ()
 /******************************************************************************/
 function initialiseData ()
 {
-    $("#select-churches-button").css("width", $("#help-button").css("width"));
+//    $("#select-churches-button").css("width", $("#help-button").css("width"));
     
     for (var i = 0; i < G_ChurchDetailsIndex.length; ++i)
 	G_ChurchNames.push("");
@@ -660,6 +660,7 @@ function selectItem (n)
     var latLng = L.latLng(x.latitude, x.longitude);
     G_Map.flyTo(latLng);
     G_Markers[n].openPopup();
+    $("#church-list-modal").modal("hide");
 }
 
 
@@ -783,6 +784,13 @@ function setDimensions ()
 
 
 /******************************************************************************/
+function showChurchList ()
+{
+    $("#church-list-modal").modal("show");
+}
+
+
+/******************************************************************************/
 function showHelp ()
 {
     //----------------------------------------------------------------------
@@ -831,6 +839,8 @@ function showPopupsChangeHandler ()
 
     G_InPopupCloseProcessing = false;
     G_InPopupOpenProcessing = false;
+
+    $("#main-menu-button").dropdown("toggle");
 }
 
 
@@ -882,7 +892,9 @@ function trackMeChangeHandler ()
 	return;
     }
 
+    $("#main-menu-button").dropdown("toggle");
 }
+
 
 
 
