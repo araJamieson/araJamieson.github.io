@@ -861,8 +861,8 @@ function displayCurrentLocation (position)
     {
 	if (null === G_PersonMarker)
 	    G_PersonMarker = L.marker(position.latlng, {icon: G_Icons.Person, riseOnHover:false}).addTo(G_Map);
-
-	G_PersonMarker = L.marker([position.latitude, position.longitude]).update(G_PersonMarker);
+	else
+	    G_PersonMarker = L.marker([position.latitude, position.longitude]).update(G_PersonMarker);
 
 	$('.leaflet-pane img[src="images/person.png"]').show();
 	$('.leaflet-pane img[src="images/personShadow.png"]').show();

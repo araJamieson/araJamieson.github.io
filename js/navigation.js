@@ -23,7 +23,7 @@ function geoLocationOn ()
 	maxZoom: 16,
 	timeout: 10000,
 	enableHighAccuracy: false,
-	maximumAge: 10000
+	maximumAge: 15000
     };
 
     G_Map.on("locationfound", geoLocationNewPosition);
@@ -45,9 +45,14 @@ function geoLocationOn ()
 /******************************************************************************/
 
 /******************************************************************************/
+var m_PreviousLatLng = null;
+
+
+/******************************************************************************/
 function geoLocationNewPosition (position)
 {
-    alert(1);
+    if (m_PreviousLatLng && position.latlng.equals(m_PreviousLatLng)) return;
+    m_PreviousLatLng = position.latlng;
     displayCurrentLocation(position);
 }
 

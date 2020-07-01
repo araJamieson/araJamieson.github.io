@@ -132,7 +132,7 @@ L.Control.Compass = L.Control.extend({
 	setAngle: function(angle) {
 		
 		if(this.options.showDigit && !isNaN(parseFloat(angle)) && isFinite(angle))
-			this._digit.innerHTML = angle+'°';
+			this._digit.innerHTML = "<span style='text-align:center'>" + angle + '°' + "</span>";
 
 		this._currentAngle = angle;
 		this._rotateElement( this._icon );
