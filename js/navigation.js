@@ -47,6 +47,7 @@ function geoLocationOn ()
 /******************************************************************************/
 function geoLocationNewPosition (position)
 {
+    alert(1);
     displayCurrentLocation(position);
 }
 
