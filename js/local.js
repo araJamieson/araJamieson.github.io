@@ -41,6 +41,10 @@ function onLoad ()
     makeParishBoundaries();
     autoClosePopups(false);
     $("#general-modal").on("shown.bs.modal", shownDeaneryModal);
+
+    var compass = new L.Control.Compass({autoActive: true, showDigit:true});
+    G_Map.addControl(compass);
+
 }
 
 
