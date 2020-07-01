@@ -1,5 +1,5 @@
 /******************************************************************************/
-var C_SoftwareVersion = 0.2;
+var C_SoftwareVersion = 0.3;
 var C_WarnAfterDays = 90;
 
 
@@ -30,6 +30,7 @@ var G_ShowingPopups;
 function onLoad ()
 {
     $("#show-popups").prop("checked", true);
+    $("#track-me").prop("checked", false);
     G_ShowingPopups = $("#show-popups").is(":checked");
     initialiseData();
     handleHeights();
@@ -74,10 +75,29 @@ function initialiseData ()
 function makeIcons ()
 {
     /*************************************************************************/
-    var iconSize = [23, 42];
-    var iconAnchor = [12, 42];
-    var shadowSize = [48, 57];
-    var shadowAnchor = [12, 45];
+    var iconSize = [20, 45];
+    var iconAnchor = [10, 45];
+    var shadowSize = [36, 33];
+    var shadowAnchor = [10, 33];
+
+    G_Icons.Person =
+	L.icon({
+	    iconUrl:      'images/person.png',
+	    shadowUrl:    'images/personShadow.png',
+	    iconSize:     iconSize,
+	    shadowSize:   shadowSize,
+	    iconAnchor:   iconAnchor,
+	    shadowAnchor: shadowAnchor,
+	    popupAnchor:  popupAnchor
+	});
+
+
+
+    /*************************************************************************/
+    iconSize = [23, 42];
+    iconAnchor = [12, 42];
+    shadowSize = [48, 57];
+    shadowAnchor = [12, 45];
     var popupAnchor = [0, -44]; // Don't think this is used -- the popup belongs to the Sel version of the icon.
     
 
@@ -817,11 +837,60 @@ function showPopupsChangeHandler ()
 /******************************************************************************/
 /******************************************************************************/
 /**                                                                          **/
-/**                            Deanery statistics                            **/
+/**                            Location tracking                             **/
 /**                                                                          **/
 /******************************************************************************/
 /******************************************************************************/
 
+/******************************************************************************/
+var G_PersonMarker = null;
+
+
+/******************************************************************************/
+function displayCurrentLocation (position)
+{
+    if (null === position)
+    {
+	$('.leaflet-pane img[src="images/person.png"]').hide();
+	$('.leaflet-pane img[src="images/personShadow.png"]').hide();
+    }
+    else
+    {
+	if (null === G_PersonMarker)
+	    G_PersonMarker = L.marker(position.latlng, {icon: G_Icons.Person, riseOnHover:false}).addTo(G_Map);
+
+	G_PersonMarker = L.marker([position.latitude, position.longitude]).update(G_PersonMarker);
+
+	$('.leaflet-pane img[src="images/person.png"]').show();
+	$('.leaflet-pane img[src="images/personShadow.png"]').show();
+    }
+}
+
+
+/******************************************************************************/
+function trackMeChangeHandler ()
+{
+    if ($("#track-me").is(":checked"))
+	geoLocationOn();
+    else
+    {
+	geoLocationOff();
+	displayCurrentLocation(null);
+	return;
+    }
+
+}
+
+
+
+
+/******************************************************************************/
+/******************************************************************************/
+/**                                                                          **/
+/**                            Deanery statistics                            **/
+/**                                                                          **/
+/******************************************************************************/
+/******************************************************************************/
 
 /******************************************************************************/
 var G_Deanery; // The deanery currently selected for display.
