@@ -787,6 +787,8 @@ function setDimensions ()
 function showChurchList ()
 {
     $("#church-list-modal").modal("show");
+    $("#modal-body-church-list").scrollTop(0);
+
 }
 
 
