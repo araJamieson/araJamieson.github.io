@@ -992,10 +992,9 @@ function showDeaneryCharts ()
 /******************************************************************************/
 function showDeaneryInformation (deanery)
 {
-    /*************************************************************************/
+    G_Deanery = deanery;
     $("#general-modal-title").text(deanery + " Deanery");
     $("#general-modal").modal("show");
-    G_Deanery = deanery;
 }
 
 
