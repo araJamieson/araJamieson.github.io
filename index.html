@@ -81,8 +81,8 @@
 	<ul class="dropdown-menu dropdown-menu-right" style="background:#fef8f5">
 	  <li><label class="dropdown-item" style="color:black"><input id="show-popups" type="checkbox" onChange="showPopupsChangeHandler()">  Show popups <i class="fa fa-comment" style="color:DodgerBlue"></i></label></li>
 	  <li><label class="dropdown-item" style="color:black"><input id="track-me" type="checkbox" onChange="trackMeChangeHandler()"> Track me <i class="fa fa-map-marker" style="color:DodgerBlue"></i></label></li>
-	  <li><a class="dropdown-item" href="javascript:showHelp()"><i class="fa fa-question-circle" style="color:DodgerBlue"></i> Help</a></li>
 	  <li><a class="dropdown-item" href="javascript:showChurchList()"><i class="fa fa-search" style="color:DodgerBlue"></i> Find church</a></li>
+	  <li><a class="dropdown-item" href="javascript:showHelp()"><i class="fa fa-question-circle" style="color:DodgerBlue"></i> Help</a></li>
 	</ul>
       </div>
   </nav>
@@ -191,47 +191,94 @@
 	  <help-p>This works in much the same way as Google maps (ie you can
 	    scroll, zoom, etc).</help-p>
 
-	  <help-p>The icons show churches.  They are
-	    colour-coded: <span style="color:lightPink;font-weight:bold">PINK</span>
-	    for Hackney deanery, <span style="color:fuchsia;font-weight:bold">PURPLE</span> for
-	    Islington, and <span style="color:yellowGreen;font-weight:bold">GREEN</span>
-	    for Tower Hamlets.  Each carries an icon to indicate the type of church &mdash;
-	    a candle for high church, a book for evangelical, and a handshake for liberal.
+	  <help-p>The program shows a map of the UK, centred on the
+  	    area covered by the Hackney, Islington and Tower Hamlets
+	    deaneries.</help-p>
+	  
+	  <help-p>Churches are marked with pegs
+	    &mdash; <span style="color:lightPink;font-weight:bold">PINK</span>
+	    for churches in the Hackney deanery, <span style="color:fuchsia;font-weight:bold">PURPLE</span>
+	    for Islington, and <span style="color:yellowGreen;font-weight:bold">GREEN</span>
+	    for Tower Hamlets.  Each carries an icon to indicate the
+	    type of church &mdash; a candle for high church, a book
+	    for evangelical, and a handshake for liberal (and a question
+	    mark where this is still to be established).
 	  </help-p>
 
-	  <help-p>If you click on a church, a popup will appear giving brief
-	    details.  Items in blue on the popup are hyperlinks to pages where
-	    more detailed information is available.  The information available
-	    differs between the various churches, according to what I was able to
-	    find.  Where a church has associated parish boundary information, the
-	    parish boundary is displayed as well.</help-p>
 
-	  <help-p>Actually, that&rsquo;s not <em>quite</em> true: the <em>Show
-	      popups</em> checkbox at the top of the screen controls whether
-	    popups appear or not.  This makes it possible to avoid clutting the
-	    screen when the popup information is not required.</help-p>
+
+	  <help-header>Selecting churches</help-header>
+
+	  <help-p>Click on a church to select it.  Click it again to
+  	    deslect it.  You can select more than one church at once
+  	    if you wish.</help-p>
+
+	  <help-p>Where known, the parish areas of selected churches
+  	    are highlighted.  The areas are colour coded according to
+  	    GC (green through red, with green corresponding to 1, or
+  	    grey where unknown).</help-p>
+
+	  <help-p>When enabled, a pop-up appears when you select a
+	    church, giving information about the church.  Displaying
+	    numerous pop-ups may clutter the screen, so there is a
+	    checkbox on the menu which lets you control whether or not
+	    they are shown.</help-p>
+
+	  <help-p>Items in blue on the popup are hyperlinks to pages
+	    where more detailed information is available.  The
+	    information available differs between the various
+	    churches, according to what I was able to find.</help-p>
 
 	  <help-p>The popup for each church includes a button which lets you
 	    limit the display to showing only churches within a given distance of
-	    the one you have selected.  More details appear on the prompt which
-	    lets you specify the distance of interest.</help-p>
-
-	  <help-p>A church is regarded is &lsquo;selected&rsquo; once you have
-	    displayed its popup, and it remains selected until you click on it
-	    again (or equivalently, if the popup is visible, until you close the
-	    popup by clicking on the cross at the top right).</help-p>
+	    the one you have selected.</help-p>
 
 	  <help-p>So long as one or more churches are selected, aggregate
-	    information about the churches will appear at the bottom of the page.</help-p>
-	  
-	  <help-p>The purple lozenges at the left of the menu bar serve both as
-	    a legend, to indicate the meaning of the colour-coding, and also as
-	    buttons.  The idea is that it might be possible to lodge general
-	    information about the deaneries against these buttons.  I presently
-	    have some sample data (albeit genuine, from the Office of National
-	    Statistics).</help-p>
-  
+	    information about the churches will appear at the bottom of the page.
+	    It may sometimes be the case that the aggregate information is not
+	    available for all of the churches selected.  It is made clear where
+	    this is the case.</help-p>
 
+
+	  
+	  <help-header>Tracking</help-header>
+
+	  <help-p style="color:red;font-weight:bold">EXPERIMENTAL
+	    ONLY.  Do not rely upon this feature until you have built up
+	    some measure of confidence that it is working on your
+	    device.</help-p>
+
+	  <help-p>As an aid to navigation, the program has an
+  	    experimental feature which lets you track your position as
+	    you move around.</help-p>
+
+	  <help-p>This is turned off by default.  You control it using a
+	    checkbox on the menu.</help-p>
+
+	  <help-p style="font-weight:bold">When you turn the facility
+	    on, you will be asked for permission to access location
+	    data.  Note that even if you give permission, the program
+	    will have access to such data only if you have permitted
+	    it in your device&rsquo;s settings and also (where
+	    relevant) in your browser.</help-p>
+
+	  <help-p>While the feature is active, it will redraw the map
+	    every 5-10 seconds (possibly also changing the zoom
+	    settings) so that it is centred on your present
+	    location.</help-p>
+
+	  <help-p>This constant redrawing means that you cannot really
+	    browse the map while tracking is turned on &mdash; any
+	    manual scrolling you do will be undone every few seconds.
+	    In view of this, I recommend turning the feature off any
+	    time you want to browse the map, any time you are using it
+	    as the basis for analysis or discussion, or any time you
+	    are working on a non-mobile device.</help-p>
+
+
+
+
+	  
 	  <help-header>About the data</help-header>
 
 	  <help-p>The information in the tool has come from a variety of sources.</help-p>
@@ -249,7 +296,7 @@
 	    be the most reliable &mdash; although with the caveat that I have had
 	    to try to extract this information automatically, and taking
 	    information from web pages in this way is far from straightforward,
-	    and relies up different pages being put together in a consistent
+	    and relies upon different pages being put together in a consistent
 	    manner.</help-p>
 
 	  <help-p>In general the information from the other websites is less
@@ -271,19 +318,17 @@
 
 	  <help-p>The tool comprises an Excel spreadsheet in which I have
 	    gathered the various pieces of information, and then a collection of
-	    webby things, one of them derived from the tool, and the rest
+	    webby things, one of them derived from the spreadsheet, and the rest
 	    hand-crafted.</help-p>
 
 	  <help-p>It is possible that the spreadsheet may be useful in its own right.</help-p>
 
 	  <help-p>The mapping data is all open source (ie it&rsquo;s not Google
-	    Maps data), taken from <a href="https://www.openstreetmap.org/about"
-				      target="_blank">OpenStreetMap</a>.  The software which turns this data
-	    into displayable form is also open source
+	    Maps data), taken from <a href="https://www.openstreetmap.org/about" target="_blank">OpenStreetMap</a>.
+	    The software which turns this data into displayable form is also open source
 	    (<a href="https://leafletjs.com/" target="_blank">leaflet.js</a>).</help-p>
 
-	  <help-p>I also rely upon software
-	    from <a href="https://www.mapbox.com/" target="_blank">mapbox</a>.
+	  <help-p>I also rely upon software from <a href="https://www.mapbox.com/" target="_blank">mapbox</a>.
 	    This is <em>not</em> public domain, but they do make freely available
 	    a public key for limited general use, and this seems to be
 	    adequate.</help-p>
