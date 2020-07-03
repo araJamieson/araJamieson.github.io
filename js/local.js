@@ -41,6 +41,7 @@ function onLoad ()
     makeParishBoundaries();
     autoClosePopups(false);
     $("#general-modal").on("shown.bs.modal", shownDeaneryModal);
+    postcodeInitialise();
 }
 
 
@@ -91,6 +92,24 @@ function makeIcons ()
 
 
 
+    /*************************************************************************/
+    /* Added in support of things like postcode locator, just in case we use
+       them. */
+    
+    iconSize = [23, 42];
+    iconAnchor = [12, 42];
+    shadowSize = [48, 57];
+    shadowAnchor = [12, 45];
+ 
+    G_Icons.SelectedLocation = 
+	L.icon({
+	    iconUrl:      'images/selectedLocationMarker.png',
+	    iconSize:     iconSize,
+	    iconAnchor:   iconAnchor,
+	});
+   
+
+    
     /*************************************************************************/
     iconSize = [23, 42];
     iconAnchor = [12, 42];
@@ -963,9 +982,9 @@ function displayCurrentLocation (longitude, latitude)
 	}
 	else
 	{
-	    G_PersonMarker = L.marker(latLng).update(G_PersonMarker);
+	    G_PersonMarker.setLatLng(latLng);
 	    var newPos = closeToEdge(longitude, latitude);
-	    if (newPos)
+	    if (newPos) // Reposition entire map.
 	    {
 		// $$$ Ignore the proposed location.  latLng = L.latLng(newPos[1], newPos[0]);
 		G_Map.panTo(latLng);
@@ -1102,6 +1121,87 @@ function showDeaneryInformation (deanery)
     G_Deanery = deanery;
     $("#general-modal-title").text(deanery + " Deanery");
     $("#general-modal").modal("show");
+}
+
+
+
+
+
+/******************************************************************************/
+/******************************************************************************/
+/**                                                                          **/
+/**                             Postcode lookup                              **/
+/**                                                                          **/
+/******************************************************************************/
+/******************************************************************************/
+
+/******************************************************************************/
+var G_SelectedLocationMarker = null;
+
+
+/******************************************************************************/
+function postcodeInitialise ()
+{
+    $("#postcode-lookup").val("");
+
+    $("#postcode-lookup")[0].addEventListener
+    (
+	"keyup",
+	function (event)
+	{
+	    if (event.keyCode === 13)
+	    {
+		event.preventDefault();
+                postcodeLookup();
+	    }
+	}
+    );
+}
+
+
+/******************************************************************************/
+function postcodeLookup ()
+{
+    var postcode = $("#postcode-lookup").val().trim().toUpperCase().replace(" ", "");
+    if (0 === postcode.length) return;
+
+    const req = new XMLHttpRequest();
+    req.responseType = "json";
+    req.open("GET", "https://api.postcodes.io/postcodes/" + postcode);
+    req.send();
+    req.onreadystatechange = function ()
+    {
+	if (4 == this.readyState)
+	    postcodeResponse(req.response, this.status);
+    };
+}
+
+
+/******************************************************************************/
+function postcodeResponse (response, status)
+{
+    /*************************************************************************/
+    if (200 != status)
+    {
+	alert("Postcode not found.");
+	return;
+    }
+
+
+
+    /*************************************************************************/
+    var latLng = L.latLng(response.result.latitude, response.result.longitude);
+
+    if (null === G_SelectedLocationMarker)
+    {
+	G_SelectedLocationMarker = L.marker(latLng, {icon: G_Icons.SelectedLocation, riseOnHover:false}).addTo(G_Map);
+	G_Map.panTo(latLng);
+    }
+    else
+    {
+	G_SelectedLocationMarker.setLatLng(latLng);
+	G_Map.panTo(latLng);
+    }
 }
 
 
