@@ -1,4 +1,9 @@
 /******************************************************************************/
+var G_WatchId = null;
+
+
+      
+/******************************************************************************/
 /******************************************************************************/
 /**                                                                          **/
 /**                                  Public                                  **/
@@ -9,27 +14,30 @@
 /******************************************************************************/
 function geoLocationOff ()
 {
-    try { G_Map.stopLocate(); } catch (err) {}
+    if (!navigator.geolocation) return;
+    try { navigator.geolocation.clearWatch(G_WatchId); } catch (err) {}
+    G_WatchId = null;
 }
 
 
 /******************************************************************************/
 function geoLocationOn ()
 {
+    if (!navigator.geolocation)
+    {
+	alert("Tracking facility not available.");
+	return;
+    }
+
     var options =
     {
-	watch: true,
-	setView: true,
-	maxZoom: 16,
-	timeout: 10000,
 	enableHighAccuracy: false,
-	maximumAge: 15000
+	timeout: 10000,
+	maximumAge: 150000
     };
+    
 
-    G_Map.on("locationfound", geoLocationNewPosition);
-    G_Map.on("locationerror", geoLocationNotWorking);
-
-    G_Map.locate(options);
+    G_WatchId = navigator.geolocation.watchPosition(geoLocationNewPosition, geoLocationErr, options);
 }
 
 
@@ -45,21 +53,16 @@ function geoLocationOn ()
 /******************************************************************************/
 
 /******************************************************************************/
-var m_PreviousLatLng = null;
+function geoLocationErr (err)
+{
+    alert(err.message);
+    notifyGeoLocationFailed();
+}
 
 
 /******************************************************************************/
 function geoLocationNewPosition (position)
 {
-    if (m_PreviousLatLng && position.latlng.equals(m_PreviousLatLng)) return;
-    m_PreviousLatLng = position.latlng;
-    displayCurrentLocation(position);
+    displayCurrentLocation(position.coords.longitude, position.coords.latitude);
 }
 
-
-/******************************************************************************/
-function geoLocationNotWorking (err)
-{
-    geoLocationOff();
-    alert("Location information not available: " + err.message);
-}

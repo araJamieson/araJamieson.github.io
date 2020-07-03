@@ -41,9 +41,6 @@ function onLoad ()
     makeParishBoundaries();
     autoClosePopups(false);
     $("#general-modal").on("shown.bs.modal", shownDeaneryModal);
-
-    //var compass = new L.Control.Compass({autoActive: true, showDigit:true});
-    //G_Map.addControl(compass);
 }
 
 
@@ -61,8 +58,6 @@ function onLoad ()
 /******************************************************************************/
 function initialiseData ()
 {
-//    $("#select-churches-button").css("width", $("#help-button").css("width"));
-    
     for (var i = 0; i < G_ChurchDetailsIndex.length; ++i)
 	G_ChurchNames.push("");
     
@@ -624,6 +619,29 @@ function popupClose (popup)
 
 
 /******************************************************************************/
+function popupCloseAll ()
+{
+    if (G_InPopupOpenProcessing || G_InPopupCloseProcessing) return;
+    G_InPopupCloseProcessing = true;
+
+    for (var ix = 0; ix < G_ChurchDetails.length; ++ix)
+    {
+	if (null !== G_ChurchDetails[ix].parishBoundary)
+	    G_ChurchDetails[ix].parishBoundary.removeFrom(G_Map);
+
+	G_Markers[ix].options.icon = G_Markers[ix].myOriginalIcon;
+	G_Markers[ix].removeFrom(G_Map);
+	G_Markers[ix].addTo(G_Map);
+    }
+    
+    G_SelectedItems = [];
+    accumulateInformationForSelectedItems();
+
+    G_InPopupCloseProcessing = false;
+}
+
+
+/******************************************************************************/
 function popupOpen (popup)
 {
     if (G_InPopupOpenProcessing) return;
@@ -862,23 +880,110 @@ var G_PersonMarker = null;
 
 
 /******************************************************************************/
-function displayCurrentLocation (position)
+/* This checks to see if the location passed via the arguments is close to the
+   edge of the map as currently displayed.  If so, it proposes a revised centre
+   for the map so that the person icon is reasonably well centered.  Note that
+   at present I can't convince myself this degree of sophisticaion is
+   necessary, so the caller may ignore the proposed location, and simply
+   recentre on the given location if the present routine implies that
+   repositioning is needed. */
+
+function closeToEdge (longitude, latitude)
 {
-    if (null === position)
+    /**************************************************************************/
+    const fac = 0.2;
+    var bounds = G_Map.getBounds();
+    var height = bounds.getNorth() - bounds.getSouth();
+    var width = bounds.getEast() - bounds.getWest();
+    var changed = false;
+    var newLatitude = latitude;
+    var newLongitude = longitude;
+
+
+
+    /**************************************************************************/
+    var bottomBeforeRecentre = bounds.getSouth() + height * fac;
+    if (latitude < bottomBeforeRecentre)
+    {
+	changed = true;
+	newLatitude = bounds.getSouth();
+    }
+    else
+    {
+	var topBeforeRecentre = bounds.getNorth() - height * fac;
+	if (latitude > topBeforeRecentre)
+	{
+	    changed = true;
+	    newLatitude = bounds.getNorth();
+	}
+    }
+    
+    
+    /**************************************************************************/
+    var leftBeforeRecentre = bounds.getWest() + width * fac;
+    if (longitude < leftBeforeRecentre)
+    {
+	changed = true;
+	return newLongitude = bounds.getWest();
+    }
+    else
+    {
+	var rightBeforeRecentre = bounds.getEast() - width * fac;
+	if (longitude > rightBeforeRecentre)
+	{
+	    changed = true;
+	    newLongitude = bounds.getEast();
+	}
+    }
+
+
+
+    /**************************************************************************/
+    if (!changed) return null;
+    return [newLongitude, newLatitude];
+}
+
+
+/******************************************************************************/
+function displayCurrentLocation (longitude, latitude)
+{
+    if (null === longitude)
     {
 	$('.leaflet-pane img[src="images/person.png"]').hide();
 	$('.leaflet-pane img[src="images/personShadow.png"]').hide();
     }
     else
     {
+	var latLng = L.latLng(latitude, longitude);
+	
 	if (null === G_PersonMarker)
-	    G_PersonMarker = L.marker(position.latlng, {icon: G_Icons.Person, riseOnHover:false}).addTo(G_Map);
+	{
+	    G_PersonMarker = L.marker(latLng, {icon: G_Icons.Person, riseOnHover:false}).addTo(G_Map);
+	    G_Map.panTo(latLng);
+	}
 	else
-	    G_PersonMarker = L.marker([position.latitude, position.longitude]).update(G_PersonMarker);
+	{
+	    G_PersonMarker = L.marker(latLng).update(G_PersonMarker);
+	    var newPos = closeToEdge(longitude, latitude);
+	    if (newPos)
+	    {
+		// $$$ Ignore the proposed location.  latLng = L.latLng(newPos[1], newPos[0]);
+		G_Map.panTo(latLng);
+	    }
+	}
 
 	$('.leaflet-pane img[src="images/person.png"]').show();
 	$('.leaflet-pane img[src="images/personShadow.png"]').show();
     }
+}
+
+
+/******************************************************************************/
+function notifyGeoLocationFailed ()
+{
+    $("#track-me").prop("checked", false);
+    $("#track-me").prop("disabled", true);
+    $("#track-me-prompt").css("color", "gray");
 }
 
 
@@ -890,7 +995,7 @@ function trackMeChangeHandler ()
     else
     {
 	geoLocationOff();
-	displayCurrentLocation(null);
+	displayCurrentLocation(null, null);
 	return;
     }
 
