@@ -76,8 +76,9 @@
 	<button id="main-menu-button" type="button" class="btn btn-primary dropdown" data-toggle="dropdown"><i class="fa fa-bars"></i></button>
 	<ul class="dropdown-menu dropdown-menu-right" style="background:#fef8f5">
 	  <li><label class="dropdown-item" style="color:black"><input id="show-popups" type="checkbox" onChange="showPopupsChangeHandler()">  Show popups <i class="fa fa-comment" style="color:DodgerBlue"></i></label></li>
-	  <li><label class="dropdown-item" style="color:black"><input id="track-me" type="checkbox" onChange="trackMeChangeHandler()"> Track me <i class="fa fa-map-marker" style="color:DodgerBlue"></i></label></li>
+	  <li><label class="dropdown-item" style="color:black"><input id="track-me" type="checkbox" onChange="trackMeChangeHandler()"> <span id="track-me-prompt">Track me</span> <i class="fa fa-map-marker" style="color:DodgerBlue"></i></label></li>
 	  <li><a class="dropdown-item" href="javascript:showChurchList()"><i class="fa fa-search" style="color:DodgerBlue"></i> Find church</a></li>
+	  <li><a class="dropdown-item" href="javascript:popupCloseAll()"><i class="fa fa-trash" style="color:DodgerBlue"></i> Unselect all</a></li>
 	  <li><a class="dropdown-item" href="javascript:showHelp()"><i class="fa fa-question-circle" style="color:DodgerBlue"></i> Help</a></li>
 	</ul>
       </div>
