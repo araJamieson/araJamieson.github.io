@@ -26,6 +26,10 @@
 	  crossorigin=""></script>
 
 
+  <!-- What3Words -->
+  <script src="https://assets.what3words.com/sdk/v3/what3words.js?key=86IWND7U"></script>
+
+
   <!-- Bootstrap core CSS -->
   <script src="vendor/jquery/jquery.slim.min.js"></script>
   <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
@@ -77,11 +81,9 @@
 	<ul class="dropdown-menu dropdown-menu-right" style="background:#fef8f5">
 	  <li><label class="dropdown-item" style="color:black"><input id="show-popups" type="checkbox" onChange="showPopupsChangeHandler()">  Show popups <i class="fa fa-comment" style="color:DodgerBlue"></i></label></li>
 	  <li><label class="dropdown-item" style="color:black"><input id="track-me" type="checkbox" onChange="trackMeChangeHandler()"> <span id="track-me-prompt">Track me</span> <i class="fa fa-map-marker" style="color:DodgerBlue"></i></label></li>
-	  <li><a class="dropdown-item" href="javascript:showChurchList()"><i class="fa fa-search" style="color:DodgerBlue"></i> Find church</a></li>
+	  <li><a class="dropdown-item" href="javascript:showGeographicalSearchModal()"><i class="fa fa-search" style="color:DodgerBlue"></i> Search</a></li>
 	  <li><a class="dropdown-item" href="javascript:popupCloseAll()"><i class="fa fa-trash" style="color:DodgerBlue"></i> Unselect all</a></li>
 	  <li><a class="dropdown-item" href="javascript:showHelp()"><i class="fa fa-question-circle" style="color:DodgerBlue"></i> Help</a></li>
-	  <div class="dropdown-divider"></div>
-	  <li style="text-align:center"><label for="postcode-lookup">Postcode lookup</label><input type="text" class="form-control" id="postcode-lookup" placeholder="Postcode" aria-label="Postcode"></li>
 	</ul>
       </div>
   </nav>
@@ -150,13 +152,16 @@
 
 
 
-  <!-- Church-list modal. -->
-  <div id="church-list-modal" class="modal" role="dialog" style="filter: drop-shadow(5px 5px 4px black);">
+  <!-- Geographical search modal. -->
+  <div id="geographical-search-modal" class="modal" role="dialog" style="filter: drop-shadow(5px 5px 4px black);">
     <div class="modal-dialog">
       <div class="modal-content" style="border:2px solid black" >
-	<div class="modal-header" style="background:#eb5d1e">
-          <h4 class="modal-title" style="color:white;font-size:large">Churches</h4>
+	<div class="modal-header" style="background:#eb5d1e;border-bottom:2px solid black">
+          <h4 class="modal-title" style="color:white;font-size:large"><b>Search</b><br>(Use search box, or select a church from the list)</h4>
           <button type="button" class="close" data-dismiss="modal"><span style="color:white">&times;</span></button>
+	</div>
+	<div style="padding-top:3px;padding-bottom3px;border-bottom:2px solid black;background:#f3ae90">
+	  <input type="text" class="form-control" id="geographical-search" placeholder="Search ..." aria-label="General search" style="border:0px;background:inherit">
 	</div>
 	<div class="modal-body modal-body-scroll" id="modal-body-church-list" style="background:#fef8f5">
 	  <ul id="menu-of-churches">
@@ -189,6 +194,12 @@
 
 	  <help-p>This works in much the same way as Google maps (ie you can
 	    scroll, zoom, etc).</help-p>
+
+	  <help-p style="color:red;font-weight:bold">IMPORTANT: The
+	    program uses free mapping data.  This is, by and large,
+	    pretty good, but it is not necessarily 100% accurate and
+	    it lacks some of the facilities available with Google
+	    maps.</help-p>
 
 	  <help-p>The program shows a map of the UK, centred on the
   	    area covered by the Hackney, Islington and Tower Hamlets
@@ -240,6 +251,41 @@
 
 
 	  
+	  <help-header>Searching</help-header>
+
+	  <help-p>A Search facility is available from the burger menu.</help-p>
+
+	  <help-p>You can search in one of two ways.</help-p>
+
+	  <help-p>If you are searching for a church within one of the
+  	    deaneries covered by the tool, I recommend you pick that
+  	    church off the list which appears in the search
+  	    window.</help-p>
+
+	  <help-p>If you are searching anything else, you can use the
+  	    search box at the top of the search window, which will
+  	    attempt to work with whatever details you have available.
+  	    Postcode is probably best, or you can use a what3words
+  	    string.  You can also try typing some portion of an
+  	    address, but bear in mind the caveats in the next
+	    paragraph.  The search is limited to London in order
+	    to make it less likely that it will return more than
+	    one result.  If more than one result <em>is</em>
+	    found, a warning will appear, and the first one
+	    will be used.</help-p>
+
+	  <help-p>Note that these ad hoc searches do not support so
+	    many features as Google.  They should work well with
+	    postcodes and what3words.  Partial addresses such as
+	    &lsquo;1 High St Kensington&rsquo; also seem to work.  But
+	    adding extra information such as organisation names is not
+	    so reliable &mdash; &lsquo;All Souls Langham Place&rsquo;
+	    fails, for instance.</help-p>
+
+
+
+
+
 	  <help-header>Tracking</help-header>
 
 	  <help-p style="color:red;font-weight:bold">EXPERIMENTAL
