@@ -41,7 +41,7 @@ function onLoad ()
     makeParishBoundaries();
     autoClosePopups(false);
     $("#general-modal").on("shown.bs.modal", shownDeaneryModal);
-    postcodeInitialise();
+    geographicalSearchInitialise();
 }
 
 
@@ -87,25 +87,23 @@ function makeIcons ()
 	    shadowSize:   shadowSize,
 	    iconAnchor:   iconAnchor,
 	    shadowAnchor: shadowAnchor,
-	    popupAnchor:  popupAnchor
+	    popupAnchor:  popupAnchor,
 	});
 
 
 
     /*************************************************************************/
-    /* Added in support of things like postcode locator, just in case we use
-       them. */
+    /* Added in support of things like geographical search locator. */
     
     iconSize = [23, 42];
     iconAnchor = [12, 42];
-    shadowSize = [48, 57];
-    shadowAnchor = [12, 45];
  
     G_Icons.SelectedLocation = 
 	L.icon({
 	    iconUrl:      'images/selectedLocationMarker.png',
 	    iconSize:     iconSize,
 	    iconAnchor:   iconAnchor,
+	    className:    'blinking'
 	});
    
 
@@ -697,7 +695,7 @@ function selectItem (n)
     var latLng = L.latLng(x.latitude, x.longitude);
     G_Map.flyTo(latLng);
     G_Markers[n].openPopup();
-    $("#church-list-modal").modal("hide");
+    $("#geographical-search-modal").modal("hide");
 }
 
 
@@ -821,9 +819,9 @@ function setDimensions ()
 
 
 /******************************************************************************/
-function showChurchList ()
+function showGeographicalSearchModal ()
 {
-    $("#church-list-modal").modal("show");
+    $("#geographical-search-modal").modal("show");
     $("#modal-body-church-list").scrollTop(0);
 
 }
@@ -853,6 +851,7 @@ function showHelp ()
 
     //----------------------------------------------------------------------
     $("#help-modal").html(s);
+    $("#help-modal").scrollTop(0);
     $("#help-modal").modal("show");
 }
 
@@ -1130,7 +1129,7 @@ function showDeaneryInformation (deanery)
 /******************************************************************************/
 /******************************************************************************/
 /**                                                                          **/
-/**                             Postcode lookup                              **/
+/**                           Geographical search                            **/
 /**                                                                          **/
 /******************************************************************************/
 /******************************************************************************/
@@ -1139,12 +1138,18 @@ function showDeaneryInformation (deanery)
 var G_SelectedLocationMarker = null;
 
 
-/******************************************************************************/
-function postcodeInitialise ()
+function geographicalSearchClear ()
 {
-    $("#postcode-lookup").val("");
+    $("#geographical-search").val("");
+}
 
-    $("#postcode-lookup")[0].addEventListener
+
+/******************************************************************************/
+function geographicalSearchInitialise ()
+{
+    geographicalSearchClear();
+
+    $("#geographical-search")[0].addEventListener
     (
 	"keyup",
 	function (event)
@@ -1152,7 +1157,7 @@ function postcodeInitialise ()
 	    if (event.keyCode === 13)
 	    {
 		event.preventDefault();
-                postcodeLookup();
+                geographicalSearch();
 	    }
 	}
     );
@@ -1160,37 +1165,63 @@ function postcodeInitialise ()
 
 
 /******************************************************************************/
-function postcodeLookup ()
+function geographicalSearch ()
 {
-    var postcode = $("#postcode-lookup").val().trim().toUpperCase().replace(" ", "");
-    if (0 === postcode.length) return;
+    /*************************************************************************/
+    var geographicalSearch = $("#geographical-search").val().trim();
+    if (0 === geographicalSearch.length)
+    {
+	geographicalSearchClear();
+	return;
+    }
+    
 
+
+    /*************************************************************************/
+    if (geographicalSearch.match(/[a-z]+\.[a-z]+\.[a-z]+/i))
+    {
+	geographicalSearchWhat3Words(geographicalSearch);
+	return;
+    }
+
+
+    
+    /*************************************************************************/
+    var requestText = "https://nominatim.openstreetmap.org/search?q=" + encodeURIComponent(geographicalSearch) + "&format=json&addressdetails=1&extratags=1&limit=2&countrycodes=gb&viewbox=-0.4,51.4,0.07,51.6&bounded=1";
     const req = new XMLHttpRequest();
     req.responseType = "json";
-    req.open("GET", "https://api.postcodes.io/postcodes/" + postcode);
+    req.open("GET", requestText);
     req.send();
     req.onreadystatechange = function ()
     {
 	if (4 == this.readyState)
-	    postcodeResponse(req.response, this.status);
+	    geographicalSearchResponse(req.response, this.status);
     };
 }
 
 
 /******************************************************************************/
-function postcodeResponse (response, status)
+function geographicalSearchMatchesChurch (postcode)
 {
-    /*************************************************************************/
-    if (200 != status)
+    postcode = postcode.toUpperCase()
+    for (var i = 0; i < G_ChurchDetails.length; ++i)
+	if (postcode == G_ChurchDetails[i].postcode)
     {
-	alert("Postcode not found.");
-	return;
+	geographicalSearchClear();
+	selectItem(i);
+	return true;
     }
 
+    return false;
+}
 
 
+
+/******************************************************************************/
+function geographicalSearchPositionMarker (lon, lat)
+{
     /*************************************************************************/
-    var latLng = L.latLng(response.result.latitude, response.result.longitude);
+    var latLng = L.latLng(lat, lon);
 
     if (null === G_SelectedLocationMarker)
     {
@@ -1202,7 +1233,71 @@ function postcodeResponse (response, status)
 	G_SelectedLocationMarker.setLatLng(latLng);
 	G_Map.panTo(latLng);
     }
+
+
+
+    /*************************************************************************/
+    geographicalSearchClear();
+    $("#geographical-search-modal").modal("hide");
 }
+
+
+/******************************************************************************/
+function geographicalSearchResponse (response, status)
+{
+    /*************************************************************************/
+    if (200 != status)
+    {
+	alert("Search failed.");
+	return;
+    }
+
+
+
+    /*************************************************************************/
+    if (0 == response.length)
+    {
+	alert("No match found.");
+	return;
+    }
+
+
+
+    /*************************************************************************/
+    if (1 != response.length)
+	alert("Ambiguous search.  Taking the first match.");
+
+
+
+    /*************************************************************************/
+    response = response[0];
+    if (geographicalSearchMatchesChurch(response.address.postcode))
+	return;
+
+
+    
+    /*************************************************************************/
+    geographicalSearchPositionMarker(response.lon, response.lat);
+}
+
+
+/******************************************************************************/
+function geographicalSearchWhat3Words (searchString)
+{
+    what3words.api.convertToCoordinates(searchString.toLowerCase()).then
+    (
+	function (response)
+	{
+	    geographicalSearchPositionMarker(response.coordinates.lng, response.coordinates.lat);
+	},
+
+	function (err)
+	{
+	    alert("Search failed.");
+	}
+    );
+}
+
 
 
 
