@@ -19,6 +19,25 @@
 }
 
 
+@keyframes blink {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+
+@-webkit-keyframes blink {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.blinking {
+  animation: blink 1s step-start 0s infinite;
+  -webkit-animation: blink 1s step-start 0s infinite;
+}
+
+
 .btn {
   background-color: DodgerBlue; /* Blue background */
   border: 1px solid black;
