@@ -42,6 +42,84 @@ function onLoad ()
     autoClosePopups(false);
     $("#general-modal").on("shown.bs.modal", shownDeaneryModal);
     geographicalSearchInitialise();
+    // $$$ See below.  setUpForObtainingLocations();
+}
+
+
+
+
+
+/******************************************************************************/
+/******************************************************************************/
+/**                                                                          **/
+/**                              Map refinement                              **/
+/**                                                                          **/
+/******************************************************************************/
+/******************************************************************************/
+
+/******************************************************************************/
+/*
+  It proved to be very difficult to obtain accurate location information for
+  the churches which appeared in the initial implementation.  In the end, I
+  had to map the postcodes to coordinates and use that.  However, this is
+  somewhat of a blunt instrument, in that postcodes can cover a somewhat
+  extended area, and the church therefore still cannot be located precisely.
+
+  To address this (albeit somewhat painfully), arrange for the following
+  method to be called.
+
+  You can now select one church at a time (by clicking on the peg, or by
+  searching for it), and then click RIGHT at the location where the peg
+  should actually lie.  Provided you deselect the church once you have
+  done this, you can repeat proceedings multiple times with different
+  churches if you wish.
+
+  Finally, click right with no churches selected, and an alert will appear
+  giving the names of the churches and their coordinates, and you can cut
+  and paste this into the spreadsheet.
+/******************************************************************************/
+
+/******************************************************************************/
+var G_AccumulatedCoordinates = ""; // Used to collect coordinates when accumulating information to enable churches to be positioned more accurately.
+
+
+/******************************************************************************/
+function setUpForObtainingLocations ()
+{
+    G_Map.addEventListener
+    (
+	'contextmenu',
+	function(ev)
+	{
+	    if (0 == G_SelectedItems.length)
+	    {
+		alert("Accumulated coordinates:" + "\n" + G_AccumulatedCoordinates);
+		G_AccumulatedCoordinates = "";
+		return;
+	    }
+	    
+	    if (G_SelectedItems.length > 1)
+	    {
+		alert("More than one church selected.");
+		return;
+	    }
+	    
+	    lat = ev.latlng.lat;
+	    lng = ev.latlng.lng;
+
+	    var name = "UNDEFINED";
+
+	    for (var i = 0; i < G_ChurchDetailsIndex.length; ++i)
+		if (G_ChurchDetailsIndex[i].index == G_SelectedItems[0])
+	    {
+		name = G_ChurchDetailsIndex[i].name;
+		break;
+	    }
+
+	    G_AccumulatedCoordinates += "\n" + name + "\t" + lat + "\t" + lng;
+	    document.execCommand("copy");
+	}
+    );
 }
 
 
