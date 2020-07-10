@@ -101,6 +101,12 @@ img.centred {
 }
 
 
+#modal-body-church-list /* This differs from the other modals, in that it has an extra header.
+{
+    max-height: 80vh;
+}
+
+    
 .modal-body-scroll
 {
     overflow: hidden !important;
