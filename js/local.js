@@ -17,7 +17,7 @@ class DisplayableObjectCollection
     {
 	displayableObject.set("eltIndex", this.m_Collection.length);
 	this.m_Collection.push(displayableObject);
-	this.m_NameIndex[displayableObject.data().name] = displayableObject;
+	this.m_NameIndex.set(displayableObject.data().name, displayableObject);
     }
 
     forEach (fn) { this.m_Collection.forEach(fn); }
@@ -28,6 +28,8 @@ class DisplayableObjectCollection
 	this.m_Collection.filter(ofRequiredType).forEach(fn);
     }
 
+    
+    getAll () { return this.m_Collection; }
     
     getElt (ix) { return this.m_Collection[ix]; }
     
@@ -720,7 +722,11 @@ var G_SelectedItems = [];             // List of all items currently selected.
 
 
 /******************************************************************************/
-/* For selected items, accumulates information for use in the footer. */
+/* For selected items, accumulates information for use in the footer.  This is
+   slightly complicated.  ElectoralRoll and parish population apply across
+   a parish, not to an individual church, plus they aren't always available
+   anyway.  In addition, they may actually be recorded against more than one
+   church in the parish, or only against a single one. */
 
 function accumulateInformationForSelectedItems ()
 {
@@ -734,36 +740,93 @@ function accumulateInformationForSelectedItems ()
 
     
     //----------------------------------------------------------------------
+    class ParishData
+    {
+	constructor (electoralRoll, parishPopulation) { this.m_ElectoralRoll = electoralRoll; this.m_parishPopulation = parishPopulation; }
+
+	m_ElectorallRoll = 0;
+	m_ParishPopulation = 0;
+
+	m_ElectoralRollError = false;	
+	m_ParishPopulationError = false;	
+    };
+
+
+    
+    //----------------------------------------------------------------------
+    // Get a list of parishes.
+    
+    var parishes = new Map();
+    function getParishes (ix) { parishes.set(ix, new ParishData(0, 0)); }
+    G_SelectedItems.forEach(getParishes);
+    
+
+
+    //----------------------------------------------------------------------
+    // Get the data for each parish.
+    
+    for (const [key, value] of parishes)
+    {
+	var churchesInParish = G_DisplayableObjectCollection.getAll().filter(x => x.data().hasOwnProperty("parish") && x.data().parish == key);
+	for (var i = 0; i < churchesInParish.length; ++i)
+	{
+	    var data = churchesInParish[i].data();
+
+	    var electoralRoll = parseInt(data.electoralRoll);
+	    var parishPopulation = parseInt(data.wikipediaPopulationOfParish);
+	    
+	    if (0 === value.m_ElectoralRoll)
+		value.m_ElectoralRoll = electoralRoll;
+	    else if (value.m_ElectoralRoll !== electoralRoll)
+		value.m_ElectoralRollError = true;
+		
+	    if (0 === value.m_ParishPopulation)
+		value.m_ParishPopulation = parishPopulation
+	    else if (value.m_ParishPopulation !== parishPopulation)
+		value.m_ParishPopulationError = true;
+	}
+    }
+
+
+    
+    //----------------------------------------------------------------------
     var dubiousElectoralRoll = false;
     var dubiousParishPopulation = false;
     var totalElectoralRoll = 0;
     var totalParishPopulation = 0;
 
-    function f (ix)
+    function accumulate (x)
     {
-	var elt = G_DisplayableObjectCollection.getElt(ix);
-	var x = elt.data();
-	
-	if (0 === x.electoralRoll.length)
-	    dubiousElectoralRoll = true;
-	else
-	    totalElectoralRoll += Number(x.electoralRoll);
-	
-	if (0 === x.wikipediaPopulationOfParish.length)
-	    dubiousParishPopulation = true;
-	else
-	    totalParishPopulation += Number(x.wikipediaPopulationOfParish);
+	dubiousElectoralRoll = dubiousElectoralRoll || x.m_ElectoralRollError;
+	dubiousParishPopulation = dubiousParishPopulation || x.m_ParishPopulationError;
+
+	if (!x.m_ElectoralRollError) totalElectoralRoll += x.m_ElectoralRoll;
+	if (!x.m_ParishPopulationError) totalParishPopulation += x.m_ParishPopulation;
     }
 
+    const iterator = parishes.values();
+    let result = iterator.next();
+    while (!result.done)
+    {
+	accumulate(result.value)
+	result = iterator.next();
+    }
     
-    function isChurch (ix) { return "church" === G_DisplayableObjectCollection.getElt(ix).getElementClass(); }
-    
-    G_SelectedItems.filter(isChurch).forEach(f);
 
-    totalElectoralRoll = "Total electoral roll: " + totalElectoralRoll + (dubiousElectoralRoll ? " (Figure incomplete)" : "");
-    totalParishPopulation = "Total parish pop: " + totalParishPopulation + (dubiousParishPopulation ? " (Figure incomplete)" : "");
-    var text = totalElectoralRoll + " • " + totalParishPopulation;
 
+    //----------------------------------------------------------------------
+    if (0 === totalElectoralRoll)
+	totalElectoralRoll = "";
+    else
+	totalElectoralRoll = "Total electoral roll: " + totalElectoralRoll + (dubiousElectoralRoll ? " (Figure incomplete)" : "");
+
+    if (0 === totalParishPopulation)
+	totalParishPopulation= "";
+    else
+	totalParishPopulation = "Total parish pop: " + totalParishPopulation + (dubiousParishPopulation ? " (Figure incomplete)" : "");
+
+    var sep = 0 === totalElectoralRoll.length || 0 === totalParishPopulation.length ? "" : " • ";
+    var text = totalElectoralRoll + sep + totalParishPopulation;
 
 
     //----------------------------------------------------------------------
@@ -780,7 +843,8 @@ function accumulateInformationForSelectedItems ()
 
     
     //----------------------------------------------------------------------
-    text = "Churches: " + G_SelectedItems.length + " • " + dist + text;
+    sep = 0 === (dist + text).length ? "" : " • ";
+    text = "Churches: " + G_SelectedItems.length + sep + dist + text;
     $("#accumulated-data").text(text);
     $("#accumulated-data").css("visibility", "visible");
 }
