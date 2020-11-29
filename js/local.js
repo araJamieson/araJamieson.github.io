@@ -1,48 +1,149 @@
 /******************************************************************************/
-var C_SoftwareVersion = 0.3;
-var C_WarnAfterDays = 90;
-
-
-var G_ChurchNames = [];
-var G_Icons = {};
-var G_InPopupCloseProcessing = false;
-var G_InPopupOpenProcessing = false;
-var G_Map;
-var G_Markers = [];
-var G_ParishColouring = ["grey", "green", "yellow", "orange", "red"]; // Per GC value.
-var G_Popups = [];
-var G_SelectedItems = [];
-var G_ShowingPopups;
-
-
-
-
-
-/******************************************************************************/
 /******************************************************************************/
 /**                                                                          **/
-/**                                  Onload                                  **/
+/**                                 Classes                                  **/
 /**                                                                          **/
 /******************************************************************************/
 /******************************************************************************/
 
 /******************************************************************************/
-function onLoad ()
+/* A collection of Church or School displayable objects. */
+
+class DisplayableObjectCollection
 {
-    $("#show-popups").prop("checked", true);
-    $("#track-me").prop("checked", false);
-    G_ShowingPopups = $("#show-popups").is(":checked");
-    initialiseData();
-    handleHeights();
-    makeMap();
-    makeIcons();
-    makeMarkers();
-    makeMenu();
-    makeParishBoundaries();
-    autoClosePopups(false);
-    $("#general-modal").on("shown.bs.modal", shownDeaneryModal);
-    geographicalSearchInitialise();
-    // $$$ See below.  setUpForObtainingLocations();
+    constructor () {}
+    
+    add (displayableObject)
+    {
+	displayableObject.set("eltIndex", this.m_Collection.length);
+	this.m_Collection.push(displayableObject);
+	this.m_NameIndex[displayableObject.data().name] = displayableObject;
+    }
+
+    forEach (fn) { this.m_Collection.forEach(fn); }
+
+    forEachOfClassType (fn, classType)
+    {
+	function ofRequiredType (x) { return x.getElementClass() === classType; }
+	this.m_Collection.filter(ofRequiredType).forEach(fn);
+    }
+
+    
+    getElt (ix) { return this.m_Collection[ix]; }
+    
+    m_Collection = new Array();
+    m_NameIndex = new Map();
+}
+	
+
+/******************************************************************************/
+/* A base class for displayable objects. */
+
+class DisplayableObject
+{
+    constructor (data) { this.m_Data = data; }
+
+    data () { return this.m_Data; }
+
+    display (onOrOff) {}
+
+    getElementClass () {}
+    
+    getIconName () {}
+    
+    hideParishBoundary () {}
+    
+    includeInSelectionMenu () { return false; }
+    
+    select ()
+    {
+	this.showParishBoundary();
+	this.setMarkerToSelected();
+    }
+    
+    set (key, val) { this.m_Data[key] = val; }
+
+    setMarkerToSelected ()
+    {
+	var ix = this.data().eltIndex;
+	G_Markers[ix].options.icon = G_Icons[this.getIconName() + "Sel"];
+	G_Markers[ix].removeFrom(G_Map);
+	G_Markers[ix].addTo(G_Map);
+	if (G_ShowingPopups) G_Popups[ix].openOn(G_Map);
+    }
+
+    setMarkerToUnselected ()
+    {
+	var ix = this.data().eltIndex;
+	G_Markers[ix].options.icon = G_Markers[ix].myOriginalIcon;
+	G_Markers[ix].removeFrom(G_Map);
+	G_Markers[ix].addTo(G_Map);
+    }
+
+    showParishBoundary () {}
+
+    unselect ()
+    {
+	this.hideParishBoundary();
+	this.setMarkerToUnselected();
+    }
+}
+
+
+/******************************************************************************/
+/* Church. */
+
+class Church extends DisplayableObject
+{
+    constructor (data)
+    {
+	super(data);
+    }
+
+    getElementClass () { return "church"; }
+
+    getIconName () { return "church" + super.data().deanery + super.data().churchmanship; }
+
+    hideParishBoundary ()
+    {
+	var myData = this.data();
+	if (myData.hasOwnProperty("parishBoundary") && null !== myData.parishBoundary)
+	    myData.parishBoundary.removeFrom(G_Map);
+    }
+    
+    showParishBoundary ()
+    {
+	var myData = this.data();
+	if (myData.hasOwnProperty("parishBoundary") && null !== myData.parishBoundary)
+	myData.parishBoundary.addTo(G_Map);
+    }
+    
+    includeInSelectionMenu () { return true; }
+}
+
+
+
+/******************************************************************************/
+/* School. */
+
+class School extends DisplayableObject
+{
+    constructor (data)
+    {
+	super(data);
+    }
+
+    display (onOrOff)
+    {
+    }
+
+    getElementClass () { return "school"; }
+
+    getIconName () { return "school" + super.data().deanery + (super.data().type === "Primary" ? "Primary" : "Secondary"); }
+
+    showPopup (onOrOff)
+    {
+    }
 }
 
 
@@ -52,74 +153,46 @@ function onLoad ()
 /******************************************************************************/
 /******************************************************************************/
 /**                                                                          **/
-/**                              Map refinement                              **/
+/**                                 Global                                   **/
 /**                                                                          **/
 /******************************************************************************/
 /******************************************************************************/
 
 /******************************************************************************/
-/*
-  It proved to be very difficult to obtain accurate location information for
-  the churches which appeared in the initial implementation.  In the end, I
-  had to map the postcodes to coordinates and use that.  However, this is
-  somewhat of a blunt instrument, in that postcodes can cover a somewhat
-  extended area, and the church therefore still cannot be located precisely.
-
-  To address this (albeit somewhat painfully), arrange for the following
-  method to be called.
-
-  You can now select one church at a time (by clicking on the peg, or by
-  searching for it), and then click RIGHT at the location where the peg
-  should actually lie.  Provided you deselect the church once you have
-  done this, you can repeat proceedings multiple times with different
-  churches if you wish.
-
-  Finally, click right with no churches selected, and an alert will appear
-  giving the names of the churches and their coordinates, and you can cut
-  and paste this into the spreadsheet.
-/******************************************************************************/
-
-/******************************************************************************/
-var G_AccumulatedCoordinates = ""; // Used to collect coordinates when accumulating information to enable churches to be positioned more accurately.
+const C_ParishColouring = { Hackney:"#FFB6C1", Islington:"#FF00FF", TowerHamlets:"#9ACD32" };
+const C_SoftwareVersion = 0.4;
+const C_WarnAfterDays = 90;
 
 
 /******************************************************************************/
-function setUpForObtainingLocations ()
+var G_DataLastUpdated = "???"; // Date when the underlying data was last updated.
+var G_DisplayableObjectCollection = new DisplayableObjectCollection(); // All the Church and School objects.
+var G_Icons = {}; // All available icons.
+var G_Map; // The map.
+var G_Markers = []; // All markers.
+var G_Popups = []; // All popups.
+var G_ShowingPopups; // True if any popups are visible.
+
+
+/******************************************************************************/
+/* Kicks everything off. */
+
+function onLoad ()
 {
-    G_Map.addEventListener
-    (
-	'contextmenu',
-	function(ev)
-	{
-	    if (0 == G_SelectedItems.length)
-	    {
-		alert("Accumulated coordinates:" + "\n" + G_AccumulatedCoordinates);
-		G_AccumulatedCoordinates = "";
-		return;
-	    }
-	    
-	    if (G_SelectedItems.length > 1)
-	    {
-		alert("More than one church selected.");
-		return;
-	    }
-	    
-	    lat = ev.latlng.lat;
-	    lng = ev.latlng.lng;
-
-	    var name = "UNDEFINED";
-
-	    for (var i = 0; i < G_ChurchDetailsIndex.length; ++i)
-		if (G_ChurchDetailsIndex[i].index == G_SelectedItems[0])
-	    {
-		name = G_ChurchDetailsIndex[i].name;
-		break;
-	    }
-
-	    G_AccumulatedCoordinates += "\n" + name + "\t" + lat + "\t" + lng;
-	    document.execCommand("copy");
-	}
-    );
+    $("#show-popups").prop("checked", true);
+    $("#track-me").prop("checked", false);
+    G_ShowingPopups = $("#show-popups").is(":checked");
+    initialiseData();
+    handleHeights();
+    makeMap();
+    makeIcons();
+    G_DisplayableObjectCollection.forEach(makeMarker);
+    makeMenu();
+    G_DisplayableObjectCollection.forEach(makeParishBoundary);
+    autoClosePopups(false);
+    $("#general-modal").on("shown.bs.modal", shownDeaneryModal);
+    geographicalSearchInitialise();
+    // $$$ See below.  setUpForObtainingLocations();
 }
 
 
@@ -135,20 +208,27 @@ function setUpForObtainingLocations ()
 /******************************************************************************/
 
 /******************************************************************************/
+/* Reads the data exported from the spreadsheet. */
+
 function initialiseData ()
 {
-    for (var i = 0; i < G_ChurchDetailsIndex.length; ++i)
-	G_ChurchNames.push("");
-    
-    for (i = 0; i < G_ChurchDetailsIndex.length; ++i)
+    addChurches();
+    addSchools();
+
+    function fn (x)
     {
-	var x = G_ChurchDetailsIndex[i];
-	G_ChurchNames[x.index] = x.name;
+	var data = x.data();
+	if (data.hasOwnProperty("popUp"))
+	    data.popUp = data.popUp.replace("@index@", data.eltIndex);
     }
+
+    G_DisplayableObjectCollection.forEach(fn);
 }
 
 
 /******************************************************************************/
+/* Creates the full set of icons. */
+
 function makeIcons ()
 {
     /*************************************************************************/
@@ -196,302 +276,42 @@ function makeIcons ()
 
     
     /*************************************************************************/
-    G_Icons.HackneyLiberal =
-	L.icon({
-	    iconUrl:      'images/hackneyLiberal.png',
-	    shadowUrl:    'images/shadow.png',
+    function createIcon (collection, deanery, type, selected)
+    {
+	var iconUrl = "images/" + collection + deanery + type + selected + ".png";
+	return L.icon({
+	    iconUrl:      iconUrl,
+	    shadowUrl:    "images/shadow.png",
 	    iconSize:     iconSize,
 	    shadowSize:   shadowSize,
 	    iconAnchor:   iconAnchor,
 	    shadowAnchor: shadowAnchor,
 	    popupAnchor:  popupAnchor
 	});
-
-    G_Icons.HackneyEvangelical =
-	L.icon({
-	    iconUrl:      'images/hackneyEvangelical.png',
-	    shadowUrl:    'images/shadow.png',
-	    iconSize:     iconSize,
-	    shadowSize:   shadowSize,
-	    iconAnchor:   iconAnchor,
-	    shadowAnchor: shadowAnchor,
-	    popupAnchor:  popupAnchor
-	});
-
-    G_Icons.HackneyHigh =
-	L.icon({
-	    iconUrl:      'images/hackneyHigh.png',
-	    shadowUrl:    'images/shadow.png',
-	    iconSize:     iconSize,
-	    shadowSize:   shadowSize,
-	    iconAnchor:   iconAnchor,
-	    shadowAnchor: shadowAnchor,
-	    popupAnchor:  popupAnchor
-	});
-
-
-    G_Icons.HackneyUnknown =
-	L.icon({
-	    iconUrl:      'images/hackneyUnknown.png',
-	    shadowUrl:    'images/shadow.png',
-	    iconSize:     iconSize,
-	    shadowSize:   shadowSize,
-	    iconAnchor:   iconAnchor,
-	    shadowAnchor: shadowAnchor,
-	    popupAnchor:  popupAnchor
-	});
-
-
-
-    /*************************************************************************/
-    G_Icons.IslingtonLiberal =
-	L.icon({
-	    iconUrl:      'images/islingtonLiberal.png',
-	    shadowUrl:    'images/shadow.png',
-	    iconSize:     iconSize,
-	    shadowSize:   shadowSize,
-	    iconAnchor:   iconAnchor,
-	    shadowAnchor: shadowAnchor,
-	    popupAnchor:  popupAnchor
-	});
-
-    G_Icons.IslingtonEvangelical =
-	L.icon({
-	    iconUrl:      'images/islingtonEvangelical.png',
-	    shadowUrl:    'images/shadow.png',
-	    iconSize:     iconSize,
-	    shadowSize:   shadowSize,
-	    iconAnchor:   iconAnchor,
-	    shadowAnchor: shadowAnchor,
-	    popupAnchor:  popupAnchor
-	});
-
-    G_Icons.IslingtonHigh =
-	L.icon({
-	    iconUrl:      'images/islingtonHigh.png',
-	    shadowUrl:    'images/shadow.png',
-	    iconSize:     iconSize,
-	    shadowSize:   shadowSize,
-	    iconAnchor:   iconAnchor,
-	    shadowAnchor: shadowAnchor,
-	    popupAnchor:  popupAnchor
-	});
-
-    G_Icons.IslingtonUnknown =
-	L.icon({
-	    iconUrl:      'images/islingtonUnknown.png',
-	    shadowUrl:    'images/shadow.png',
-	    iconSize:     iconSize,
-	    shadowSize:   shadowSize,
-	    iconAnchor:   iconAnchor,
-	    shadowAnchor: shadowAnchor,
-	    popupAnchor:  popupAnchor
-	});
-
-
-
-    /*************************************************************************/
-    G_Icons.TowerHamletsLiberal =
-	L.icon({
-	    iconUrl:      'images/towerHamletsLiberal.png',
-	    shadowUrl:    'images/shadow.png',
-	    iconSize:     iconSize,
-	    shadowSize:   shadowSize,
-	    iconAnchor:   iconAnchor,
-	    shadowAnchor: shadowAnchor,
-	    popupAnchor:  popupAnchor
-	});
-
-    G_Icons.TowerHamletsEvangelical =
-	L.icon({
-	    iconUrl:      'images/towerHamletsEvangelical.png',
-	    shadowUrl:    'images/shadow.png',
-	    iconSize:     iconSize,
-	    shadowSize:   shadowSize,
-	    iconAnchor:   iconAnchor,
-	    shadowAnchor: shadowAnchor,
-	    popupAnchor:  popupAnchor
-	});
-
-    G_Icons.TowerHamletsHigh =
-	L.icon({
-	    iconUrl:      'images/towerHamletsHigh.png',
-	    shadowUrl:    'images/shadow.png',
-	    iconSize:     iconSize,
-	    shadowSize:   shadowSize,
-	    iconAnchor:   iconAnchor,
-	    shadowAnchor: shadowAnchor,
-	    popupAnchor:  popupAnchor
-	});
-
-    G_Icons.TowerHamletsUnknown =
-	L.icon({
-	    iconUrl:      'images/towerHamletsUnknown.png',
-	    shadowUrl:    'images/shadow.png',
-	    iconSize:     iconSize,
-	    shadowSize:   shadowSize,
-	    iconAnchor:   iconAnchor,
-	    shadowAnchor: shadowAnchor,
-	    popupAnchor:  popupAnchor
-	});
-
-
-    /*************************************************************************/
-    /*************************************************************************/
-    /*************************************************************************/
-    /*************************************************************************/
-    iconSize = [38, 58];
-    iconAnchor = [19, 50];
-    shadowSize = [38, 58];
-    //shadowAnchor = [12, 42];
-    popupAnchor = [0, -52];
-    
+    }
 
     
 
     /*************************************************************************/
-    G_Icons.HackneyLiberalSel =
-	L.icon({
-	    iconUrl:      'images/hackneyLiberalSel.png',
-	    shadowUrl:    'images/shadow.png',
-	    iconSize:     iconSize,
-	    shadowSize:   shadowSize,
-	    iconAnchor:   iconAnchor,
-	    shadowAnchor: shadowAnchor,
-	    popupAnchor:  popupAnchor
-	});
+    var classTypes = ["church", "school"];
+    var deaneries = ["Hackney", "Islington", "TowerHamlets"];
+    var selecteds = ["", "Sel"];
+    var types = ["Evangelical", "High", "Liberal", "Unknown"];
+    for (var classType of classTypes)
+    {
+	for (var deanery of deaneries)
+	    for (var type of types)
+		for (var selected of selecteds)
+		    G_Icons[classType + deanery + type + selected] = createIcon(classType, deanery, type, selected);
 
-    G_Icons.HackneyEvangelicalSel =
-	L.icon({
-	    iconUrl:      'images/hackneyEvangelicalSel.png',
-	    shadowUrl:    'images/shadow.png',
-	    iconSize:     iconSize,
-	    shadowSize:   shadowSize,
-	    iconAnchor:   iconAnchor,
-	    shadowAnchor: shadowAnchor,
-	    popupAnchor:  popupAnchor
-	});
-
-    G_Icons.HackneyHighSel =
-	L.icon({
-	    iconUrl:      'images/hackneyHighSel.png',
-	    shadowUrl:    'images/shadow.png',
-	    iconSize:     iconSize,
-	    shadowSize:   shadowSize,
-	    iconAnchor:   iconAnchor,
-	    shadowAnchor: shadowAnchor,
-	    popupAnchor:  popupAnchor
-	});
-
-    G_Icons.HackneyUnknownSel =
-	L.icon({
-	    iconUrl:      'images/hackneyUnknownSel.png',
-	    shadowUrl:    'images/shadow.png',
-	    iconSize:     iconSize,
-	    shadowSize:   shadowSize,
-	    iconAnchor:   iconAnchor,
-	    shadowAnchor: shadowAnchor,
-	    popupAnchor:  popupAnchor
-	});
-
-
-
-    /*************************************************************************/
-    G_Icons.IslingtonLiberalSel =
-	L.icon({
-	    iconUrl:      'images/islingtonLiberalSel.png',
-	    shadowUrl:    'images/shadow.png',
-	    iconSize:     iconSize,
-	    shadowSize:   shadowSize,
-	    iconAnchor:   iconAnchor,
-	    shadowAnchor: shadowAnchor,
-	    popupAnchor:  popupAnchor
-	});
-
-    G_Icons.IslingtonEvangelicalSel =
-	L.icon({
-	    iconUrl:      'images/islingtonEvangelicalSel.png',
-	    shadowUrl:    'images/shadow.png',
-	    iconSize:     iconSize,
-	    shadowSize:   shadowSize,
-	    iconAnchor:   iconAnchor,
-	    shadowAnchor: shadowAnchor,
-	    popupAnchor:  popupAnchor
-	});
-
-    G_Icons.IslingtonHighSel =
-	L.icon({
-	    iconUrl:      'images/islingtonHighSel.png',
-	    shadowUrl:    'images/shadow.png',
-	    iconSize:     iconSize,
-	    shadowSize:   shadowSize,
-	    iconAnchor:   iconAnchor,
-	    shadowAnchor: shadowAnchor,
-	    popupAnchor:  popupAnchor
-	});
-
-    G_Icons.IslingtonUnknownSel =
-	L.icon({
-	    iconUrl:      'images/islingtonUnknownSel.png',
-	    shadowUrl:    'images/shadow.png',
-	    iconSize:     iconSize,
-	    shadowSize:   shadowSize,
-	    iconAnchor:   iconAnchor,
-	    shadowAnchor: shadowAnchor,
-	    popupAnchor:  popupAnchor
-	});
-
-
-
-    /*************************************************************************/
-    G_Icons.TowerHamletsLiberalSel =
-	L.icon({
-	    iconUrl:      'images/towerHamletsLiberalSel.png',
-	    shadowUrl:    'images/shadow.png',
-	    iconSize:     iconSize,
-	    shadowSize:   shadowSize,
-	    iconAnchor:   iconAnchor,
-	    shadowAnchor: shadowAnchor,
-	    popupAnchor:  popupAnchor
-	});
-
-    G_Icons.TowerHamletsEvangelicalSel =
-	L.icon({
-	    iconUrl:      'images/towerHamletsEvangelicalSel.png',
-	    shadowUrl:    'images/shadow.png',
-	    iconSize:     iconSize,
-	    shadowSize:   shadowSize,
-	    iconAnchor:   iconAnchor,
-	    shadowAnchor: shadowAnchor,
-	    popupAnchor:  popupAnchor
-	});
-
-    G_Icons.TowerHamletsHighSel =
-	L.icon({
-	    iconUrl:      'images/towerHamletsHighSel.png',
-	    shadowUrl:    'images/shadow.png',
-	    iconSize:     iconSize,
-	    shadowSize:   shadowSize,
-	    iconAnchor:   iconAnchor,
-	    shadowAnchor: shadowAnchor,
-	    popupAnchor:  popupAnchor
-	});
-
-    G_Icons.TowerHamletsUnknownSel =
-	L.icon({
-	    iconUrl:      'images/towerHamletsUnknownSel.png',
-	    shadowUrl:    'images/shadow.png',
-	    iconSize:     iconSize,
-	    shadowSize:   shadowSize,
-	    iconAnchor:   iconAnchor,
-	    shadowAnchor: shadowAnchor,
-	    popupAnchor:  popupAnchor
-	});
-
+	types = ["Primary", "Secondary"];
+    }
 }
 
 
 /******************************************************************************/
+/* Creates the map. */
+
 function makeMap ()
 {
     G_Map = L.map('the-map', {center: [51.539088, -0.073342], zoom: 14,  zoomSnap: 0, wheelPxPerZoomLevel:120 });
@@ -505,597 +325,88 @@ function makeMap ()
 		 accessToken: 'pk.eyJ1IjoiYXJhai1tYXBwaW5nIiwiYSI6ImNrOTAxa2MwZzAwenczbW50Nmp2OHJnOGQifQ.MQaj-mNdjT6vbj4Pa5VGPQ' // Public key.
 		}).addTo(G_Map);
 
-    G_Map.on("popupopen",  function (e) {  popupOpen (e.popup);  });
-    G_Map.on("popupclose", function (e) {  popupClose(e.popup);  });
+    G_Map.on("popupopen",  function (e) {  selectOne  (e.popup);  });
+    G_Map.on("popupclose", function (e) {  unselectOne(e.popup);  });
 
     L.control.scale({metric:true, imperial:true, maxWidth:200}).addTo(G_Map);
 }
 
 
 /******************************************************************************/
-function makeMarkers ()
+/* Makes a marker and popup for each displayable item. */
+
+function makeMarker (x)
 {
-    for (var i = 0; i < G_ChurchDetails.length; ++i)
-    {
-	var x = G_ChurchDetails[i];
-	var parishBoundaryMarker = (0 !== x.dataBoundary.length) ? "* " : "";
-	var icon = G_Icons[x.deanery + x.churchmanship];
-	var marker = L.marker([x.latitude, x.longitude], {icon: icon, riseOnHover:true}).addTo(G_Map);
-	var popup = L.popup().setLatLng([x.latitude, x.longitude]).setContent(x.content);
-	marker.bindPopup(popup);
-	if (!isTouchScreen()) marker.bindTooltip(parishBoundaryMarker + G_ChurchNames[i]);
-	G_Markers.push(marker);
-	G_Popups.push(popup);
-	x.marker = marker;
-	marker.myOriginalIcon = icon;
-	marker.myOnMap = true;
-	marker.myPopup = popup;
-	popup.myChurchDetailsIndex = i;
-    }
+    data = x.data();
+    var parishBoundaryMarker = ""; if (data.hasOwnProperty("dataBoundary") && 0 !== data.dataBoundary.length) parishBoundaryMarker = "* ";
+    var icon = G_Icons[x.getIconName()];
+    var marker = L.marker([data.latitude, data.longitude], {icon: icon, riseOnHover:true}).addTo(G_Map);
+    var popup = L.popup().setLatLng([data.latitude, data.longitude]).setContent(data.popUp);
+    marker.bindPopup(popup);
+    if (!isTouchScreen()) marker.bindTooltip(parishBoundaryMarker + data.name);
+    G_Markers.push(marker);
+    G_Popups.push(popup);
+    data.marker = marker;
+    data.popup = popup;
+    marker.myOriginalIcon = icon;
+    marker.myOnMap = true;
+    marker.myPopup = popup;
+    popup.myOwnersUniqueId = data.eltIndex;
 }
 
 
 /******************************************************************************/
+/* Makes a selection menu for items which are prepared to be found by name. */
+
 function makeMenu ()
 {
-    var details = "";
-    for (var i = 0; i < G_ChurchDetailsIndex.length; ++i)
-    {
-	var x = G_ChurchDetailsIndex[i];
-	details += "<li><a class='dropdown-item' href='javascript:selectItem(" + x.index + ")'>" + x.name + "</a></li>";
-    }
-
-    $("#menu-of-churches").html(details);
-}
-
-
-/******************************************************************************/
-function makeParishBoundaries ()
-{
-    for (var i = 0; i < G_ChurchDetails.length; ++i)
-    {
-	var x = G_ChurchDetails[i];
-	x.parishBoundary = null;
-	if (0 !== x.dataBoundary.length)
-	{
-	    var boundaryElts = decode(G_ChurchDetails[i].dataBoundary);
-	    var polygon = L.polygon(boundaryElts, {color: G_ParishColouring[G_ChurchDetails[i].gc]});
-	    x.parishBoundary = polygon;
-	}
-    }
-}
-
-
-
-
-
-/******************************************************************************/
-/******************************************************************************/
-/**                                                                          **/
-/**                           Selection processing                           **/
-/**                                                                          **/
-/******************************************************************************/
-/******************************************************************************/
-
-/******************************************************************************/
-function accumulateInformationForSelectedItems ()
-{
-    //----------------------------------------------------------------------
-    if (0 === G_SelectedItems.length)
-    {
-	$("#accumulated-data").css("visibility", "hidden");
-	return;
-    }
-
-
-    
-    //----------------------------------------------------------------------
-    var dubiousElectoralRoll = false;
-    var dubiousParishPopulation = false;
-    var totalElectoralRoll = 0;
-    var totalParishPopulation = 0;
-
-    for (var i = 0; i < G_SelectedItems.length; ++i)
-    {
-	var x = G_ChurchDetails[G_SelectedItems[i]];
-
-	if (0 === x.electoralRoll.length)
-	    dubiousElectoralRoll = true;
-	else
-	    totalElectoralRoll += Number(x.electoralRoll);
-	
-	if (0 === x.parishPopulation.length)
-	    dubiousParishPopulation = true;
-	else
-	    totalParishPopulation += Number(x.parishPopulation);
-    }
-
-    totalElectoralRoll = "Total electoral roll: " + totalElectoralRoll + (dubiousElectoralRoll ? " (Figure incomplete)" : "");
-    totalParishPopulation = "Total parish pop: " + totalParishPopulation + (dubiousParishPopulation ? " (Figure incomplete)" : "");
-    var text = totalElectoralRoll + " • " + totalParishPopulation;
-
-
-
-    //----------------------------------------------------------------------
-    var dist = "";
-    if (2 === G_SelectedItems.length)
-    {
-	var ix0 = G_SelectedItems[0];
-	var ix1 = G_SelectedItems[1];
-	var d = distance(G_ChurchDetails[ix0].latitude, G_ChurchDetails[ix0].longitude, G_ChurchDetails[ix1].latitude, G_ChurchDetails[ix1].longitude);
-	dist = "Dist: " + d.toFixed(1) + "mls • ";
-    }
-
-
-    
-    //----------------------------------------------------------------------
-    text = "Churches: " + G_SelectedItems.length + " • " + dist + text;
-    $("#accumulated-data").text(text);
-    $("#accumulated-data").css("visibility", "visible");
-}
-
-
-/******************************************************************************/
-function autoClosePopups (val)
-{
-    for (var i = 0; i < G_Popups.length; ++i)
-    {
-	G_Popups[i].options.autoClose = val;
-	G_Popups[i].options.closeOnClick = val;
-	G_Popups[i].options.draggable = true;
-    }
-}
-
-
-/******************************************************************************/
-function limitToRadius (id)
-{
-    //----------------------------------------------------------------------
-    var response;
-    while (true)
-    {
-	response = window.prompt("Limit to churches within this number of miles as the crow flies (blank => show all churches).  Decimals of a mile are ok.", "");
-	if (null === response) return;
-	response = response.trim();
-	if (0 === response.length) break;
-	if (!isNaN(response)) break;
-	alert("That wasn't a number!");
-    }
-
-
-
-    //----------------------------------------------------------------------
-    if (0 === response.length)
-    {
-	for (var i = 0; i < G_Markers.length; ++i)
-	    addMarkerToMap(G_Markers[i]);
-	return;
-    }
-
-
-
-    //----------------------------------------------------------------------
-    var ixTarget;
-    for (ixTarget = 0; ixTarget < G_ChurchDetails.length; ++ixTarget)
-	if (G_ChurchDetails[ixTarget].uniqueId == id) break;
-
-    var dist = Number(response);
-    for (var i = 0; i < G_ChurchDetails.length; ++i)
-    {
-	var d = distance(G_ChurchDetails[i].latitude, G_ChurchDetails[i].longitude, G_ChurchDetails[ixTarget].latitude, G_ChurchDetails[ixTarget].longitude);
-	if (d <= dist)
-	    addMarkerToMap(G_ChurchDetails[i].marker);
-        else
-	    removeMarkerFromMap(G_ChurchDetails[i].marker);
-    }
-}
-
-
-/******************************************************************************/
-function popupClose (popup)
-{
-    if (G_InPopupOpenProcessing || G_InPopupCloseProcessing) return;
-    G_InPopupCloseProcessing = true;
-
-    var ix = popup.myChurchDetailsIndex;
-
-    if (null !== G_ChurchDetails[ix].parishBoundary)
-	G_ChurchDetails[ix].parishBoundary.removeFrom(G_Map);
-
-    G_Markers[ix].options.icon = G_Markers[ix].myOriginalIcon;
-    G_Markers[ix].removeFrom(G_Map);
-    G_Markers[ix].addTo(G_Map);
-
-    G_SelectedItems.splice(G_SelectedItems.indexOf(ix), 1);
-    accumulateInformationForSelectedItems();
-
-    G_InPopupCloseProcessing = false;
-}
-
-
-/******************************************************************************/
-function popupCloseAll ()
-{
-    if (G_InPopupOpenProcessing || G_InPopupCloseProcessing) return;
-    G_InPopupCloseProcessing = true;
-
-    for (var ix = 0; ix < G_ChurchDetails.length; ++ix)
-    {
-	if (null !== G_ChurchDetails[ix].parishBoundary)
-	    G_ChurchDetails[ix].parishBoundary.removeFrom(G_Map);
-
-	G_Markers[ix].options.icon = G_Markers[ix].myOriginalIcon;
-	G_Markers[ix].removeFrom(G_Map);
-	G_Markers[ix].addTo(G_Map);
-    }
-    
-    G_SelectedItems = [];
-    accumulateInformationForSelectedItems();
-
-    G_InPopupCloseProcessing = false;
-}
-
-
-/******************************************************************************/
-function popupOpen (popup)
-{
-    if (G_InPopupOpenProcessing) return;
-    G_InPopupOpenProcessing = true;
-    
-    var ix = popup.myChurchDetailsIndex;
-
-    if (G_SelectedItems.includes(ix)) // User has clicked on an already-selected church.
-    {
-	G_InPopupOpenProcessing = false;
-	popupClose(popup);
-	return;
-    }
-    
-    if (null !== G_ChurchDetails[ix].parishBoundary)
-	G_ChurchDetails[ix].parishBoundary.addTo(G_Map);
-
-    G_Markers[ix].options.icon = G_Icons[G_ChurchDetails[ix].deanery + G_ChurchDetails[ix].churchmanship + "Sel"];
-    G_Markers[ix].removeFrom(G_Map);
-    G_Markers[ix].addTo(G_Map);
-    if (G_ShowingPopups) G_Popups[ix].openOn(G_Map);
-
-    G_SelectedItems.push(ix);
-    accumulateInformationForSelectedItems();
-
-    G_InPopupOpenProcessing = false;
-}
-
-
-/******************************************************************************/
-function selectItem (n)
-{
-    var x = G_ChurchDetails[n];
-    var latLng = L.latLng(x.latitude, x.longitude);
-    G_Map.flyTo(latLng);
-    G_Markers[n].openPopup();
-    $("#geographical-search-modal").modal("hide");
-}
-
-
-
-
-
-/******************************************************************************/
-/******************************************************************************/
-/**                                                                          **/
-/**                              Miscellaneous                               **/
-/**                                                                          **/
-/******************************************************************************/
-/******************************************************************************/
-
-/******************************************************************************/
-function addMarkerToMap (marker)
-{
-    if (!marker.myOnMap)
-    {
-	marker.myOnMap = true;
-	marker.addTo(G_Map);
-    }
-}
-
-
-/******************************************************************************/
-function dataOutOfDate ()
-{
-    var v = G_DateLastUpdated.split("/");
-    var dtUpdated = new Date(v[2], v[1] - 1, v[0]);
-    var today = new Date();
-    var daysSinceLastUpdate =  Math.floor((today.getTime() - dtUpdated.getTime()) / (1000 * 60 * 60 * 24));
-    return (daysSinceLastUpdate > C_WarnAfterDays);
-}
-
-    
-/******************************************************************************/
-function degreesToRadians (degrees)
-{
-    return degrees * Math.PI / 180;
-}
-
-
-/******************************************************************************/
-/* Distance between two points (miles). */
-
-function distance (lat1, lng1, lat2, lng2)
-{
-    var R = 6371e3; // metres
-    var phi1 = degreesToRadians(lat1);
-    var phi2 = degreesToRadians(lat2);
-    var deltaPhi = degreesToRadians(lat2-lat1);
-    var deltaLambda = degreesToRadians(lng2-lng1);
-    var a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) +
-        Math.cos(phi1) * Math.cos(phi2) *
-        Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2);
-    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-    var d = R * c;
-    d /= 1000;
-    d *= (5/8);
-
-    return d;
-}
-
-/******************************************************************************/
-function handleHeights ()
-{
-    setDimensions();
-    window.onorientationchange = function() { setTimeout(setDimensions, 1000); };
-    window.onresize = function() { setTimeout(setDimensions, 100); };
-}
-
-
-/******************************************************************************/
-function isTouchScreen ()
-{
-    return ('ontouchstart' in window) || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
-}
-
-
-/******************************************************************************/
-function removeMarkerFromMap (marker)
-{
-    if (marker.myOnMap)
-    {
-	marker.myOnMap = false;
-	if (marker.myPopup.isOpen())  marker.closePopup();
-	marker.removeFrom(G_Map);
-    }
-}
-
-
-/******************************************************************************/
-/* Force the map container to fill the space between header and footer. */
-
-function setDimensions ()
-{
-    var h = $(window).outerHeight() - $("#navbar").outerHeight() - $("#footer").outerHeight();
-
-    $("#the-map").css("max-height", h + "px");
-    $("#the-map").css("min-height", h + "px");
-
-    h = h * 0.8;
-    $("#modal-body-help").css("max-height", h + "px");
-
-    var w = ($("#general-modal").innerWidth() -
-	     parseInt($("#general-modal").css("padding-left")) -
-	     parseInt($("#general-modal").css("padding-right")) -
-	     parseInt($("#general-modal").css("border-left-width")) -
-	     parseInt($("#general-modal").css("border-right-width")) );
-    w = 0.8 * w;
-
-    $(".general-modal").css("min-width", w + "px");
-    $(".general-modal").css("min-height", w + "px");
-    $("#general-modal-content").css("min-height", (h * 0.8) + "px");
-
-    $("#general-modal").css("left", (0.125 * w) + "px");
-    $(".general-modal").css("position", "fixed");
-}
-
-
-/******************************************************************************/
-function showGeographicalSearchModal ()
-{
-    $("#geographical-search-modal").modal("show");
-    $("#modal-body-church-list").scrollTop(0);
-
-}
-
-
-/******************************************************************************/
-function showHelp ()
-{
-    //----------------------------------------------------------------------
-    var v = G_DateLastUpdated.split("/");
-    var dtUpdated = new Date(v[2], v[1] - 1, v[0]);
-    var formattedDate = dtUpdated.toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'}).replace(/ /g, '-');
-
-
-
-    //----------------------------------------------------------------------
-    var s = $("#help-modal").html();
-    var addr = "jamie" + "@" + "critos.co.uk";
-    var text = "<a href='mail" + "to:" + addr + "'>" + addr + "</a>";
-    s = s.replace("$contact$", text);
-    s = s.replace("$softwareVersion$", "" + C_SoftwareVersion);
-    s = s.replace("$dataDate$", formattedDate);
-    s = s.replace("$outOfDateVisibility$", dataOutOfDate() ? "display": "none");
-    s = s.replace("$warnAfterDays$", "" + C_WarnAfterDays);
-
-
-
-    //----------------------------------------------------------------------
-    $("#help-modal").html(s);
-    $("#help-modal").scrollTop(0);
-    $("#help-modal").modal("show");
-}
-
-
-/******************************************************************************/
-function showPopupsChangeHandler ()
-{
-    G_ShowingPopups = $("#show-popups").is(":checked");
-
-    G_InPopupCloseProcessing = true;
-    G_InPopupOpenProcessing = true;
-
-    if (G_ShowingPopups)
-	for (var i = 0; i < G_SelectedItems.length; ++i)
-	    G_Popups[G_SelectedItems[i]].addTo(G_Map);
-    else
-    {
-	for (var i = 0; i < G_SelectedItems.length; ++i)
-	{
-	    G_Popups[G_SelectedItems[i]].removeFrom(G_Map);
-	}
-    }
-
-    G_InPopupCloseProcessing = false;
-    G_InPopupOpenProcessing = false;
-
-    $("#main-menu-button").dropdown("toggle");
-}
-
-
-
-
-
-/******************************************************************************/
-/******************************************************************************/
-/**                                                                          **/
-/**                            Location tracking                             **/
-/**                                                                          **/
-/******************************************************************************/
-/******************************************************************************/
-
-/******************************************************************************/
-var G_PersonMarker = null;
-
-
-/******************************************************************************/
-/* This checks to see if the location passed via the arguments is close to the
-   edge of the map as currently displayed.  If so, it proposes a revised centre
-   for the map so that the person icon is reasonably well centered.  Note that
-   at present I can't convince myself this degree of sophisticaion is
-   necessary, so the caller may ignore the proposed location, and simply
-   recentre on the given location if the present routine implies that
-   repositioning is needed. */
-
-function closeToEdge (longitude, latitude)
-{
     /**************************************************************************/
-    const fac = 0.2;
-    var bounds = G_Map.getBounds();
-    var height = bounds.getNorth() - bounds.getSouth();
-    var width = bounds.getEast() - bounds.getWest();
-    var changed = false;
-    var newLatitude = latitude;
-    var newLongitude = longitude;
+    var details = new Array();
+    
+    function gatherInfo (x)
+    {
+	if (x.includeInSelectionMenu())
+	    details.push(x.data().name + "%%%" + x.data().eltIndex);
+    }
+
+    G_DisplayableObjectCollection.forEach(gatherInfo);
+    details.sort();
+
+
+    /**************************************************************************/
+    var html = "";
+    
+    function createHtml (x)
+    {
+	var bits = x.split("%%%");
+	html += "<li><a class='dropdown-item' href='javascript:selectItem(" + bits[1] + ")'>" + bits[0] + "</a></li>";
+    }
+    
+    details.forEach(createHtml);
+	    
 
 
 
     /**************************************************************************/
-    var bottomBeforeRecentre = bounds.getSouth() + height * fac;
-    if (latitude < bottomBeforeRecentre)
-    {
-	changed = true;
-	newLatitude = bounds.getSouth();
-    }
-    else
-    {
-	var topBeforeRecentre = bounds.getNorth() - height * fac;
-	if (latitude > topBeforeRecentre)
-	{
-	    changed = true;
-	    newLatitude = bounds.getNorth();
-	}
-    }
+    $("#menu-of-churches").html(html);
+}
+
+
+/******************************************************************************/
+/* For those things which have a parish boundary, associates an appropriate
+   polygon with the element. */
+
+function makeParishBoundary (elt)
+{
+    elt.set("parishBoundary", null);
+
+    if (!elt.data().hasOwnProperty("dataBoundary")) return;
+
+    var dataBoundary = elt.data().dataBoundary;
+    if (0 === dataBoundary.length) return;
     
-    
-    /**************************************************************************/
-    var leftBeforeRecentre = bounds.getWest() + width * fac;
-    if (longitude < leftBeforeRecentre)
-    {
-	changed = true;
-	return newLongitude = bounds.getWest();
-    }
-    else
-    {
-	var rightBeforeRecentre = bounds.getEast() - width * fac;
-	if (longitude > rightBeforeRecentre)
-	{
-	    changed = true;
-	    newLongitude = bounds.getEast();
-	}
-    }
-
-
-
-    /**************************************************************************/
-    if (!changed) return null;
-    return [newLongitude, newLatitude];
-}
-
-
-/******************************************************************************/
-function displayCurrentLocation (longitude, latitude)
-{
-    if (null === longitude)
-    {
-	$('.leaflet-pane img[src="images/person.png"]').hide();
-	$('.leaflet-pane img[src="images/personShadow.png"]').hide();
-    }
-    else
-    {
-	var latLng = L.latLng(latitude, longitude);
-	
-	if (null === G_PersonMarker)
-	{
-	    G_PersonMarker = L.marker(latLng, {icon: G_Icons.Person, riseOnHover:false}).addTo(G_Map);
-	    G_Map.panTo(latLng);
-	}
-	else
-	{
-	    G_PersonMarker.setLatLng(latLng);
-	    var newPos = closeToEdge(longitude, latitude);
-	    if (newPos) // Reposition entire map.
-	    {
-		// $$$ Ignore the proposed location.  latLng = L.latLng(newPos[1], newPos[0]);
-		G_Map.panTo(latLng);
-	    }
-	}
-
-	$('.leaflet-pane img[src="images/person.png"]').show();
-	$('.leaflet-pane img[src="images/personShadow.png"]').show();
-    }
-}
-
-
-/******************************************************************************/
-function notifyGeoLocationFailed ()
-{
-    $("#track-me").prop("checked", false);
-    $("#track-me").prop("disabled", true);
-    $("#track-me-prompt").css("color", "gray");
-}
-
-
-/******************************************************************************/
-function trackMeChangeHandler ()
-{
-    if ($("#track-me").is(":checked"))
-	geoLocationOn();
-    else
-    {
-	geoLocationOff();
-	displayCurrentLocation(null, null);
-	return;
-    }
-
-    $("#main-menu-button").dropdown("toggle");
+    var polygon = L.polygon(decode(dataBoundary), {color: C_ParishColouring[elt.data().deanery]});
+    elt.set("parishBoundary", polygon);
 }
 
 
@@ -1216,6 +527,7 @@ function showDeaneryInformation (deanery)
 var G_SelectedLocationMarker = null;
 
 
+/******************************************************************************/
 function geographicalSearchClear ()
 {
     $("#geographical-search").val("");
@@ -1247,6 +559,7 @@ function geographicalSearch ()
 {
     /*************************************************************************/
     var geographicalSearch = $("#geographical-search").val().trim();
+
     if (0 === geographicalSearch.length)
     {
 	geographicalSearchClear();
@@ -1281,16 +594,27 @@ function geographicalSearch ()
 /******************************************************************************/
 function geographicalSearchMatchesChurch (postcode)
 {
-    postcode = postcode.toUpperCase()
-    for (var i = 0; i < G_ChurchDetails.length; ++i)
-	if (postcode == G_ChurchDetails[i].postcode)
+    postcode = postcode.toUpperCase();
+
+    function fn (x)
     {
-	geographicalSearchClear();
-	selectItem(i);
-	return true;
+	if (postcode == x.data().postcode.toUpperCase())
+	{
+	    geographicalSearchClear();
+	    selectItem(x.data().eltIndex);
+	    throw true;
+	}
     }
 
-    return false;
+    try
+    {
+	G_DisplayableObjectCollection.forEach(fn);
+	return false;
+    }
+    catch (e)
+    {
+	return true;
+    }
 }
 
 
@@ -1380,6 +704,438 @@ function geographicalSearchWhat3Words (searchString)
 
 
 
+/******************************************************************************/
+/******************************************************************************/
+/**                                                                          **/
+/**                           Selection processing                           **/
+/**                                                                          **/
+/******************************************************************************/
+/******************************************************************************/
+
+/******************************************************************************/
+var G_InPopupCloseProcessing = false; // Prevents recursion during popup close processing.
+var G_InPopupOpenProcessing = false;  // Prevents recursion during popup open  processing.
+var G_ParishBoundariesDisplayed = ""; // Parish boundaries presently visible.
+var G_SelectedItems = [];             // List of all items currently selected.
+
+
+/******************************************************************************/
+/* For selected items, accumulates information for use in the footer. */
+
+function accumulateInformationForSelectedItems ()
+{
+    //----------------------------------------------------------------------
+    if (0 === G_SelectedItems.length)
+    {
+	$("#accumulated-data").css("visibility", "hidden");
+	return;
+    }
+
+
+    
+    //----------------------------------------------------------------------
+    var dubiousElectoralRoll = false;
+    var dubiousParishPopulation = false;
+    var totalElectoralRoll = 0;
+    var totalParishPopulation = 0;
+
+    function f (ix)
+    {
+	var elt = G_DisplayableObjectCollection.getElt(ix);
+	var x = elt.data();
+	
+	if (0 === x.electoralRoll.length)
+	    dubiousElectoralRoll = true;
+	else
+	    totalElectoralRoll += Number(x.electoralRoll);
+	
+	if (0 === x.wikipediaPopulationOfParish.length)
+	    dubiousParishPopulation = true;
+	else
+	    totalParishPopulation += Number(x.wikipediaPopulationOfParish);
+    }
+
+    
+    function isChurch (ix) { return "church" === G_DisplayableObjectCollection.getElt(ix).getElementClass(); }
+    
+    G_SelectedItems.filter(isChurch).forEach(f);
+
+    totalElectoralRoll = "Total electoral roll: " + totalElectoralRoll + (dubiousElectoralRoll ? " (Figure incomplete)" : "");
+    totalParishPopulation = "Total parish pop: " + totalParishPopulation + (dubiousParishPopulation ? " (Figure incomplete)" : "");
+    var text = totalElectoralRoll + " • " + totalParishPopulation;
+
+
+
+    //----------------------------------------------------------------------
+    var dist = "";
+    if (2 === G_SelectedItems.length)
+    {
+	var ix0 = G_SelectedItems[0];
+	var ix1 = G_SelectedItems[1];
+	var d = distance(G_DisplayableObjectCollection.getElt(ix0).data().latitude, G_DisplayableObjectCollection.getElt(ix0).data().longitude,
+			 G_DisplayableObjectCollection.getElt(ix1).data().latitude, G_DisplayableObjectCollection.getElt(ix1).data().longitude);
+	dist = "Dist: " + d.toFixed(1) + "mls • ";
+    }
+
+
+    
+    //----------------------------------------------------------------------
+    text = "Churches: " + G_SelectedItems.length + " • " + dist + text;
+    $("#accumulated-data").text(text);
+    $("#accumulated-data").css("visibility", "visible");
+}
+
+
+/******************************************************************************/
+/* Closes all of the popups in one fell swoop. */
+
+function autoClosePopups (val)
+{
+    for (var i = 0; i < G_Popups.length; ++i)
+    {
+	G_Popups[i].options.autoClose = val;
+	G_Popups[i].options.closeOnClick = val;
+	G_Popups[i].options.draggable = true;
+    }
+}
+
+
+/******************************************************************************/
+/* Limits the display to churches within a given radius of a given church. */
+
+function limitToRadius (id)
+{
+    //----------------------------------------------------------------------
+    var response;
+    while (true)
+    {
+	response = window.prompt("Limit to churches within this number of miles as the crow flies (blank => show all churches).  Decimals of a mile are ok.", "");
+	if (null === response) return;
+	response = response.trim();
+	if (0 === response.length) break;
+	if (!isNaN(response)) break;
+	alert("That wasn't a number!");
+    }
+
+
+
+    //----------------------------------------------------------------------
+    if (0 === response.length)
+    {
+	for (var i = 0; i < G_Markers.length; ++i)
+	    addMarkerToMap(G_Markers[i]);
+	return;
+    }
+
+
+
+    //----------------------------------------------------------------------
+    var centreChurch = G_DisplayableObjectCollection.getElt(id);
+    var dist = Number(response);
+
+    function f (elt)
+    {
+	var d = distance(elt.data().latitude, elt.data().longitude, centreChurch.data().latitude, centreChurch.data().longitude);
+
+	if (d <= dist)
+	    addMarkerToMap(elt.data().marker);
+        else
+	    removeMarkerFromMap(elt.data().marker);
+	
+    }
+
+    G_DisplayableObjectCollection.forEachOfClassType(f, "church");
+}
+
+
+/******************************************************************************/
+/* Selects a single item. */
+
+function selectOne (popup)
+{
+    if (G_InPopupOpenProcessing) return;
+    G_InPopupOpenProcessing = true;
+    
+    var ix = popup.myOwnersUniqueId;
+
+    if (G_SelectedItems.includes(ix)) // User has clicked on an already-selected church -- toggle it.
+    {
+	G_InPopupOpenProcessing = false;
+	unselectOne(popup);
+	return;
+    }
+    
+    var owningElement = G_DisplayableObjectCollection.getElt(ix);
+    owningElement.select();
+
+    G_SelectedItems.push(ix);
+    accumulateInformationForSelectedItems();
+
+    G_InPopupOpenProcessing = false;
+}
+
+
+/******************************************************************************/
+/* Closes all popups. */
+
+function unselectAll ()
+{
+    if (G_InPopupOpenProcessing || G_InPopupCloseProcessing) return;
+    G_InPopupCloseProcessing = true;
+
+    function f (owningElt) { owningElt.unselect(); }
+    G_DisplayableObjectCollection.forEach(f);
+    
+    G_SelectedItems = [];
+    accumulateInformationForSelectedItems();
+
+    G_InPopupCloseProcessing = false;
+}
+
+
+/******************************************************************************/
+/* Closes a given popup. */
+
+function unselectOne (popup)
+{
+    if (G_InPopupOpenProcessing || G_InPopupCloseProcessing) return;
+    G_InPopupCloseProcessing = true;
+
+    var ix = popup.myOwnersUniqueId;
+    var owningElement = G_DisplayableObjectCollection.getElt(ix);
+
+    owningElement.unselect();
+    
+    G_SelectedItems.splice(G_SelectedItems.indexOf(ix), 1);
+    accumulateInformationForSelectedItems();
+
+    G_InPopupCloseProcessing = false;
+}
+
+
+/******************************************************************************/
+function selectItem (ix)
+{
+    var x = G_DisplayableObjectCollection.getElt(ix);
+    var latLng = L.latLng(x.data().latitude, x.data().longitude);
+    G_Map.flyTo(latLng);
+    G_Markers[ix].openPopup();
+    $("#geographical-search-modal").modal("hide");
+}
+
+
+
+
+
+/******************************************************************************/
+/******************************************************************************/
+/**                                                                          **/
+/**                              Miscellaneous                               **/
+/**                                                                          **/
+/******************************************************************************/
+/******************************************************************************/
+
+/******************************************************************************/
+/* Does what it says on the tin. */
+
+function addMarkerToMap (marker)
+{
+    if (!marker.myOnMap)
+    {
+	marker.myOnMap = true;
+	marker.addTo(G_Map);
+    }
+}
+
+
+/******************************************************************************/
+/* Checks to see how elderly the data is, with a view to warning if it's very
+   old, so that people can check if it needs updating.  I tend to the view that
+   we probably no longer want to do this, because the Diocesan Directory, which
+   is the main source of church information, is not entirely correct, and
+   updating the data risks losing the manual corrections which I have applied
+   to it. */
+
+function dataOutOfDate ()
+{
+    var v = G_DataLastUpdated.split("/");
+    var dtUpdated = new Date(v[2], v[1] - 1, v[0]);
+    var today = new Date();
+    var daysSinceLastUpdate =  Math.floor((today.getTime() - dtUpdated.getTime()) / (1000 * 60 * 60 * 24));
+    return (daysSinceLastUpdate > C_WarnAfterDays);
+}
+
+    
+/******************************************************************************/
+/* Does what it say on the tin. */
+
+function degreesToRadians (degrees)
+{
+    return degrees * Math.PI / 180;
+}
+
+
+/******************************************************************************/
+/* Distance between two points (miles). */
+
+function distance (lat1, lng1, lat2, lng2)
+{
+    var R = 6371e3; // metres
+    var phi1 = degreesToRadians(lat1);
+    var phi2 = degreesToRadians(lat2);
+    var deltaPhi = degreesToRadians(lat2-lat1);
+    var deltaLambda = degreesToRadians(lng2-lng1);
+    var a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) +
+        Math.cos(phi1) * Math.cos(phi2) *
+        Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    var d = R * c;
+    d /= 1000;
+    d *= (5/8);
+
+    return d;
+}
+
+/******************************************************************************/
+/* As I recall, the purpose of this is to arrange that the contents are set up
+   appropriately according to the device size and orientation, and also takes
+   account of changes in the size of the window. */
+
+function handleHeights ()
+{
+    setDimensions();
+    window.onorientationchange = function() { setTimeout(setDimensions, 1000); };
+    window.onresize = function() { setTimeout(setDimensions, 100); };
+}
+
+
+/******************************************************************************/
+/* What it says on the tin. */
+
+function isTouchScreen ()
+{
+    return ('ontouchstart' in window) || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
+}
+
+
+/******************************************************************************/
+/* What it says on the tin. */
+
+function removeMarkerFromMap (marker)
+{
+    if (marker.myOnMap)
+    {
+	marker.myOnMap = false;
+	if (marker.myPopup.isOpen())  marker.closePopup();
+	marker.removeFrom(G_Map);
+    }
+}
+
+
+/******************************************************************************/
+/* Force the map container to fill the space between header and footer. */
+
+function setDimensions ()
+{
+    var h = $(window).outerHeight() - $("#navbar").outerHeight() - $("#footer").outerHeight();
+
+    $("#the-map").css("max-height", h + "px");
+    $("#the-map").css("min-height", h + "px");
+
+    h = h * 0.8;
+    $("#modal-body-help").css("max-height", h + "px");
+
+    var w = ($("#general-modal").innerWidth() -
+	     parseInt($("#general-modal").css("padding-left")) -
+	     parseInt($("#general-modal").css("padding-right")) -
+	     parseInt($("#general-modal").css("border-left-width")) -
+	     parseInt($("#general-modal").css("border-right-width")) );
+    w = 0.8 * w;
+
+    $(".general-modal").css("min-width", w + "px");
+    $(".general-modal").css("min-height", w + "px");
+    $("#general-modal-content").css("min-height", (h * 0.8) + "px");
+
+    $("#general-modal").css("left", (0.125 * w) + "px");
+    $(".general-modal").css("position", "fixed");
+}
+
+
+/******************************************************************************/
+/* Shows the window which serves as the search-by-name menu. */
+
+function showGeographicalSearchModal ()
+{
+    $("#geographical-search-modal").modal("show");
+    $("#modal-body-church-list").scrollTop(0);
+
+}
+
+
+/******************************************************************************/
+/* What it says on the tin. */
+
+function showHelp ()
+{
+    //----------------------------------------------------------------------
+    var v = G_DataLastUpdated.split("/");
+    var dtUpdated = new Date(v[2], v[1] - 1, v[0]);
+    var formattedDate = dtUpdated.toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'}).replace(/ /g, '-');
+
+
+
+    //----------------------------------------------------------------------
+    var s = $("#help-modal").html();
+    var addr = "jamie" + "@" + "critos.co.uk";
+    var text = "<a href='mail" + "to:" + addr + "'>" + addr + "</a>";
+    s = s.replace("$contact$", text);
+    s = s.replace("$softwareVersion$", "" + C_SoftwareVersion);
+    s = s.replace("$dataDate$", formattedDate);
+    s = s.replace("$outOfDateVisibility$", dataOutOfDate() ? "display": "none");
+    s = s.replace("$warnAfterDays$", "" + C_WarnAfterDays);
+
+
+
+    //----------------------------------------------------------------------
+    $("#help-modal").html(s);
+    $("#help-modal").scrollTop(0);
+    $("#help-modal").modal("show");
+}
+
+
+/******************************************************************************/
+/* Responds to the overall control which determines whether popups are visible.
+   Popups are useful in that they show information which may be of interest,
+   but they may be quite big, and may therefore obscure the map. */
+
+function showPopupsChangeHandler ()
+{
+    G_ShowingPopups = $("#show-popups").is(":checked");
+
+    G_InPopupCloseProcessing = true;
+    G_InPopupOpenProcessing = true;
+
+    if (G_ShowingPopups)
+	for (var i = 0; i < G_SelectedItems.length; ++i)
+	    G_Popups[G_SelectedItems[i]].addTo(G_Map);
+    else
+    {
+	for (var i = 0; i < G_SelectedItems.length; ++i)
+	{
+	    G_Popups[G_SelectedItems[i]].removeFrom(G_Map);
+	}
+    }
+
+    G_InPopupCloseProcessing = false;
+    G_InPopupOpenProcessing = false;
+
+    $("#main-menu-button").dropdown("toggle");
+}
+
+
+
+
 
 /******************************************************************************/
 /******************************************************************************/
@@ -1444,4 +1200,229 @@ function decodeIntegers ( value, callback )
   }
 
     return values;
+}
+
+
+
+
+
+/******************************************************************************/
+/******************************************************************************/
+/**                                                                          **/
+/**                            Location tracking                             **/
+/**                                                                          **/
+/******************************************************************************/
+/******************************************************************************/
+
+/******************************************************************************/
+/* Can't quite recall what this is for.  I _think_ I wrote it because the tool
+   was being used on a mobile phone from a bike, and we wanted the map to
+   re-centre itself from time to time so that the user's actual location
+   remained in sight.  However, picking up the GPS data proved difficult and
+   seemed to work differently on different devices, and I don't think the
+   code was ever really used. */
+
+/******************************************************************************/
+var G_PersonMarker = null;
+
+
+/******************************************************************************/
+/* This checks to see if the location passed via the arguments is close to the
+   edge of the map as currently displayed.  If so, it proposes a revised centre
+   for the map so that the person icon is reasonably well centered.  Note that
+   at present I can't convince myself this degree of sophisticaion is
+   necessary, so the caller may ignore the proposed location, and simply
+   recentre on the given location if the present routine implies that
+   repositioning is needed. */
+
+function closeToEdge (longitude, latitude)
+{
+    /**************************************************************************/
+    const fac = 0.2;
+    var bounds = G_Map.getBounds();
+    var height = bounds.getNorth() - bounds.getSouth();
+    var width = bounds.getEast() - bounds.getWest();
+    var changed = false;
+    var newLatitude = latitude;
+    var newLongitude = longitude;
+
+
+
+    /**************************************************************************/
+    var bottomBeforeRecentre = bounds.getSouth() + height * fac;
+    if (latitude < bottomBeforeRecentre)
+    {
+	changed = true;
+	newLatitude = bounds.getSouth();
+    }
+    else
+    {
+	var topBeforeRecentre = bounds.getNorth() - height * fac;
+	if (latitude > topBeforeRecentre)
+	{
+	    changed = true;
+	    newLatitude = bounds.getNorth();
+	}
+    }
+    
+    
+    /**************************************************************************/
+    var leftBeforeRecentre = bounds.getWest() + width * fac;
+    if (longitude < leftBeforeRecentre)
+    {
+	changed = true;
+	return newLongitude = bounds.getWest();
+    }
+    else
+    {
+	var rightBeforeRecentre = bounds.getEast() - width * fac;
+	if (longitude > rightBeforeRecentre)
+	{
+	    changed = true;
+	    newLongitude = bounds.getEast();
+	}
+    }
+
+
+
+    /**************************************************************************/
+    if (!changed) return null;
+    return [newLongitude, newLatitude];
+}
+
+
+/******************************************************************************/
+/* Shifts the display so as to keep the present location reasonably well
+   centred. */
+
+function displayCurrentLocation (longitude, latitude)
+{
+    if (null === longitude)
+    {
+	$('.leaflet-pane img[src="images/person.png"]').hide();
+	$('.leaflet-pane img[src="images/personShadow.png"]').hide();
+    }
+    else
+    {
+	var latLng = L.latLng(latitude, longitude);
+	
+	if (null === G_PersonMarker)
+	{
+	    G_PersonMarker = L.marker(latLng, {icon: G_Icons.Person, riseOnHover:false}).addTo(G_Map);
+	    G_Map.panTo(latLng);
+	}
+	else
+	{
+	    G_PersonMarker.setLatLng(latLng);
+	    var newPos = closeToEdge(longitude, latitude);
+	    if (newPos) // Reposition entire map.
+	    {
+		// $$$ Ignore the proposed location.  latLng = L.latLng(newPos[1], newPos[0]);
+		G_Map.panTo(latLng);
+	    }
+	}
+
+	$('.leaflet-pane img[src="images/person.png"]').show();
+	$('.leaflet-pane img[src="images/personShadow.png"]').show();
+    }
+}
+
+
+/******************************************************************************/
+/* Can't get GPS data. */
+
+function notifyGeoLocationFailed ()
+{
+    $("#track-me").prop("checked", false);
+    $("#track-me").prop("disabled", true);
+    $("#track-me-prompt").css("color", "gray");
+}
+
+
+/******************************************************************************/
+/* Used to control the adjustment of the map in order to keep the user's actual
+   location visible. */
+
+function trackMeChangeHandler ()
+{
+    if ($("#track-me").is(":checked"))
+	geoLocationOn();
+    else
+    {
+	geoLocationOff();
+	displayCurrentLocation(null, null);
+	return;
+    }
+
+    $("#main-menu-button").dropdown("toggle");
+}
+
+
+
+
+
+/******************************************************************************/
+/******************************************************************************/
+/**                                                                          **/
+/**                              Map refinement                              **/
+/**                                                                          **/
+/******************************************************************************/
+/******************************************************************************/
+
+/******************************************************************************/
+/*
+  It proved to be very difficult to obtain accurate location information for
+  the churches which appeared in the initial implementation.  In the end, I
+  had to map the postcodes to coordinates and use that.  However, this is
+  somewhat of a blunt instrument, in that postcodes can cover a somewhat
+  extended area, and the church therefore still cannot be located precisely.
+
+  To address this (albeit somewhat painfully), arrange for the following
+  method to be called.
+
+  You can now select one church at a time (by clicking on the peg, or by
+  searching for it), and then click RIGHT at the location where the peg
+  should actually lie.  Provided you deselect the church once you have
+  done this, you can repeat proceedings multiple times with different
+  churches if you wish.
+
+  Finally, click right with no churches selected, and an alert will appear
+  giving the names of the churches and their coordinates, and you can cut
+  and paste this into the spreadsheet.
+/******************************************************************************/
+
+/******************************************************************************/
+var G_AccumulatedCoordinates = ""; // Used to collect coordinates when accumulating information to enable churches to be positioned more accurately.
+
+
+/******************************************************************************/
+function setUpForObtainingLocations ()
+{
+    G_Map.addEventListener
+    (
+	'contextmenu',
+	function(ev)
+	{
+	    if (0 == G_SelectedItems.length)
+	    {
+		alert("Accumulated coordinates:" + "\n" + G_AccumulatedCoordinates);
+		G_AccumulatedCoordinates = "";
+		return;
+	    }
+	    
+	    if (G_SelectedItems.length > 1)
+	    {
+		alert("More than one church selected.");
+		return;
+	    }
+	    
+	    lat = ev.latlng.lat;
+	    lng = ev.latlng.lng;
+
+	    var name = G_DisplayableObjectCollection.getElt(G_SelectedItems[0]).data().name;
+
+	    G_AccumulatedCoordinates += "\n" + name + "\t" + lat + "\t" + lng;
+	    document.execCommand("copy");
+	}
+    );
 }
