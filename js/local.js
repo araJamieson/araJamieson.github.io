@@ -772,18 +772,24 @@ function accumulateInformationForSelectedItems ()
 	{
 	    var data = churchesInParish[i].data();
 
-	    var electoralRoll = parseInt(data.electoralRoll);
-	    var parishPopulation = parseInt(data.wikipediaPopulationOfParish);
+	    var electoralRoll = 0 === data.electoralRoll.length ? 0 : parseInt(data.electoralRoll);
+	    var parishPopulation = 0 === data.wikipediaPopulationOfParish.length ? 0 : parseInt(data.wikipediaPopulationOfParish);
 	    
-	    if (0 === value.m_ElectoralRoll)
-		value.m_ElectoralRoll = electoralRoll;
-	    else if (value.m_ElectoralRoll !== electoralRoll)
-		value.m_ElectoralRollError = true;
+	    if (0 != electoralRoll)
+	    {
+		if (0 === value.m_ElectoralRoll)
+		    value.m_ElectoralRoll = electoralRoll;
+		else if (value.m_ElectoralRoll !== electoralRoll)
+		    value.m_ElectoralRollError = true;
+	    }
 		
-	    if (0 === value.m_ParishPopulation)
-		value.m_ParishPopulation = parishPopulation
-	    else if (value.m_ParishPopulation !== parishPopulation)
-		value.m_ParishPopulationError = true;
+	    if (0 != parishPopulation)
+	    {
+		if (0 === value.m_ParishPopulation)
+		    value.m_ParishPopulation = parishPopulation
+		else if (value.m_ParishPopulation !== parishPopulation)
+		    value.m_ParishPopulationError = true;
+	    }
 	}
     }
 
@@ -818,15 +824,16 @@ function accumulateInformationForSelectedItems ()
     if (0 === totalElectoralRoll)
 	totalElectoralRoll = "";
     else
-	totalElectoralRoll = "Total electoral roll: " + totalElectoralRoll + (dubiousElectoralRoll ? " (Figure incomplete)" : "");
+	totalElectoralRoll = "Total electoral roll: " + totalElectoralRoll + (dubiousElectoralRoll ? " (Subject to doubt)" : "");
 
     if (0 === totalParishPopulation)
 	totalParishPopulation= "";
     else
-	totalParishPopulation = "Total parish pop: " + totalParishPopulation + (dubiousParishPopulation ? " (Figure incomplete)" : "");
+	totalParishPopulation = "Total parish pop: " + totalParishPopulation + (dubiousParishPopulation ? " (Subject to doubt)" : "");
 
     var sep = 0 === totalElectoralRoll.length || 0 === totalParishPopulation.length ? "" : " • ";
     var text = totalElectoralRoll + sep + totalParishPopulation;
+
 
 
     //----------------------------------------------------------------------
