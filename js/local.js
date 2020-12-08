@@ -354,6 +354,8 @@ function makeMarker (x)
     marker.myOnMap = true;
     marker.myPopup = popup;
     popup.myOwnersUniqueId = data.eltIndex;
+
+    marker.bindTooltip(data.name);
 }
 
 
