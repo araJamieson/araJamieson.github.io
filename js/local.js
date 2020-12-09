@@ -1,4 +1,28 @@
 /******************************************************************************/
+/*
+   Change history
+   ==============
+
+   2020-12-09: Significant changes to limitToRadius, so as to display the
+               distances of local churches and schools.  Main problem with
+               this is that by default, the tooltips I use for the purpose
+               vanish if you mouse-over and then mouse-out their owning
+               marker, even though they are marked as permanent (which I
+               don't think is right, and certainly is not what I want).
+               To address this, I remove the mouseout handler on the
+               affected markers when dipslaying the popups.  Unfortunately
+               without actually relying upon a knowledge of the leaflet.js
+               source code, I have no way of finding out what the original
+               handler did, and therefore can't reinstate it.  Instead, I'm
+               adding my own handler whose sole function is to hide the
+               tooltips as usual when not in this special mode.  The
+               problem with this, of course, is that I don't know if, by
+               doing this, I'm losing some functionality which was there
+               previously.
+*/
+/******************************************************************************/
+   
+/******************************************************************************/
 /******************************************************************************/
 /**                                                                          **/
 /**                                 Classes                                  **/
@@ -345,7 +369,13 @@ function makeMarker (x)
     var marker = L.marker([data.latitude, data.longitude], {icon: icon, riseOnHover:true}).addTo(G_Map);
     var popup = L.popup().setLatLng([data.latitude, data.longitude]).setContent(data.popUp);
     marker.bindPopup(popup);
-    if (!isTouchScreen()) marker.bindTooltip(parishBoundaryMarker + data.name);
+
+    if (!isTouchScreen())
+    {
+	marker.bindTooltip(parishBoundaryMarker + data.name);
+	marker.getTooltip().jamieMarker = marker;
+    }
+    
     G_Markers.push(marker);
     G_Popups.push(popup);
     data.marker = marker;
@@ -354,8 +384,6 @@ function makeMarker (x)
     marker.myOnMap = true;
     marker.myPopup = popup;
     popup.myOwnersUniqueId = data.eltIndex;
-
-    marker.bindTooltip(data.name);
 }
 
 
@@ -882,7 +910,7 @@ function limitToRadius (id)
     var response;
     while (true)
     {
-	response = window.prompt("Limit to churches within this number of miles as the crow flies (blank => show all churches).  Decimals of a mile are ok.", "");
+	response = window.prompt("Limit to establishments within this number of miles as the crow flies (blank => show all churches).  Decimals of a mile are ok.", "");
 	if (null === response) return;
 	response = response.trim();
 	if (0 === response.length) break;
@@ -903,21 +931,70 @@ function limitToRadius (id)
 
 
     //----------------------------------------------------------------------
-    var centreChurch = G_DisplayableObjectCollection.getElt(id);
+    var centreItem = G_DisplayableObjectCollection.getElt(id);
     var dist = Number(response);
 
     function f (elt)
     {
-	var d = distance(elt.data().latitude, elt.data().longitude, centreChurch.data().latitude, centreChurch.data().longitude);
+	if (elt === centreItem) return;
 
-	if (d <= dist)
-	    addMarkerToMap(elt.data().marker);
-        else
-	    removeMarkerFromMap(elt.data().marker);
-	
+	var data = elt.data();
+	var marker = data.marker;
+	var tooltip = marker.getTooltip();
+	var tooltipText = tooltip.getContent();
+
+	var includeDistanceInPopup; // This also serves to say whether the popup should be displayed.
+	var showMarker;
+
+	var d = distance(data.latitude, data.longitude, centreItem.data().latitude, centreItem.data().longitude);
+
+	if (0 == dist)
+	{
+	    includeDistanceInPopup = false;
+	    showMarker = true;
+	}
+	else if (d <= dist)
+	{
+	    includeDistanceInPopup = true;
+	    showMarker = true;
+	}
+	else
+	{
+	    includeDistanceInPopup = false;
+	    showMarker = false;
+	}
+
+
+	if (showMarker)
+	    addMarkerToMap(marker);
+	else
+	    removeMarkerFromMap(marker);
+
+	if (isTouchScreen())
+	    return;
+
+
+	if (includeDistanceInPopup && !tooltipText.includes(":"))
+	{
+	    tooltipText += ": " + d.toFixed(1) + " miles";
+	    tooltip.options.permanent = true;
+	    marker.setTooltipContent(tooltipText);
+	    marker.openTooltip();
+	    marker.off('mouseout');
+	}
+	else if (!includeDistanceInPopup && tooltipText.includes(":"))
+	{
+	    tooltipText = tooltipText.split(":")[0];
+	    tooltip.options.permanent = false;
+	    marker.setTooltipContent(tooltipText);
+	    marker.closeTooltip();
+	    marker.on('mouseout', function (e) { e.target.closeTooltip(); } );
+	}
     }
 
-    G_DisplayableObjectCollection.forEachOfClassType(f, "church");
+
+    //G_DisplayableObjectCollection.forEachOfClassType(f, "church");
+    G_DisplayableObjectCollection.forEach(f);
 }
 
 
