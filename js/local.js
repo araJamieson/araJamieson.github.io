@@ -389,7 +389,6 @@ function makeIcons ()
     function createIcon (collection, deanery, type, selected)
     {
 	var iconUrl = "images/" + collection + deanery + type + selected + ".png";
-	alert(iconUrl);
 	return L.icon({
 	    iconUrl:      iconUrl,
 	    shadowUrl:    "images/shadow.png",
@@ -413,10 +412,7 @@ function makeIcons ()
 	for (var deanery of deaneries)
 	    for (var type of types)
 		for (var selected of selecteds)
-	{
-	    alert(classType + deanery + type + selected);
-	    G_Icons[classType + deanery + type + selected] = createIcon(classType, deanery, type, selected);
-	}
+		    G_Icons[classType + deanery + type + selected] = createIcon(classType, deanery, type, selected);
 
 	types = ["Primary", "Secondary"];
     }
@@ -453,7 +449,6 @@ function makeMarker (x)
 {
     data = x.data();
     var parishBoundaryMarker = ""; if (data.hasOwnProperty("dataBoundary") && 0 !== data.dataBoundary.length) parishBoundaryMarker = "* ";
-    alert(">>> " + x.getIconName());
     var icon = G_Icons[x.getIconName()];
     var marker = L.marker([data.latitude, data.longitude], {icon: icon, riseOnHover:true}).addTo(G_Map);
     var popup = L.popup().setLatLng([data.latitude, data.longitude]).setContent(data.popUp);
