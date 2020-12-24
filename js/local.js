@@ -1,4 +1,87 @@
 /******************************************************************************/
+/* Test function to show building heights.  Use in place of makeMap.  Needs
+   to have 
+
+     <script src="https://api.mapbox.com/mapbox-gl-js/v2.0.0/mapbox-gl.js"></script>
+     <link href="https://api.mapbox.com/mapbox-gl-js/v2.0.0/mapbox-gl.css" rel="stylesheet" />  
+
+   added to the head section of index.html
+
+function xx ()
+{
+mapboxgl.accessToken = 'pk.eyJ1IjoiYXJhai1tYXBwaW5nIiwiYSI6ImNrOTAxa2MwZzAwenczbW50Nmp2OHJnOGQifQ.MQaj-mNdjT6vbj4Pa5VGPQ';
+    G_Map = new mapboxgl.Map({
+        style: 'mapbox://styles/mapbox/streets-v11', //'mapbox://styles/mapbox/light-v10',
+        center: [-0.073342, 51.539088],
+        zoom: 15.5,
+        pitch: 45,
+        bearing: -17.6,
+        container: 'the-map',
+        antialias: true
+    });
+
+    // The 'building' layer in the mapbox-streets vector source contains building-height
+    // data from OpenStreetMap.
+    G_Map.on('load', function () {
+        // Insert the layer beneath any symbol layer.
+        var layers = G_Map.getStyle().layers;
+
+        var labelLayerId;
+        for (var i = 0; i < layers.length; i++) {
+            if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
+                labelLayerId = layers[i].id;
+                break;
+            }
+        }
+
+        G_Map.addLayer(
+            {
+                'id': '3d-buildings',
+                'source': 'composite',
+                'source-layer': 'building',
+                'filter': ['==', 'extrude', 'true'],
+                'type': 'fill-extrusion',
+                'minzoom': 15,
+                'paint': {
+                    'fill-extrusion-color': '#aaa',
+
+                    // use an 'interpolate' expression to add a smooth transition effect to the
+                    // buildings as the user zooms in
+                    'fill-extrusion-height': [
+                        'interpolate',
+                        ['linear'],
+                        ['zoom'],
+                        15,
+                        0,
+                        15.05,
+                        ['get', 'height']
+                    ],
+                    'fill-extrusion-base': [
+                        'interpolate',
+                        ['linear'],
+                        ['zoom'],
+                        15,
+                        0,
+                        15.05,
+                        ['get', 'min_height']
+                    ],
+                    'fill-extrusion-opacity': 0.6
+                }
+            },
+            labelLayerId
+        );
+    });
+}
+*/
+/******************************************************************************/
+
+
+
+
+
+
+
+/******************************************************************************/
 /*
    Change history
    ==============
@@ -211,6 +294,7 @@ function onLoad ()
     initialiseData();
     handleHeights();
     makeMap();
+    //xx();
     makeIcons();
     G_DisplayableObjectCollection.forEach(makeMarker);
     makeMenu();
@@ -322,7 +406,7 @@ function makeIcons ()
     var classTypes = ["church", "school"];
     var deaneries = ["Hackney", "Islington", "TowerHamlets"];
     var selecteds = ["", "Sel"];
-    var types = ["Evangelical", "High", "Liberal", "Unknown"];
+    var types = ["Catholic1", "Catholic2", "Evangelical", "Liberal", "Unknown"];
     for (var classType of classTypes)
     {
 	for (var deanery of deaneries)
