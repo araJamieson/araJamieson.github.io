@@ -93,7 +93,7 @@ mapboxgl.accessToken = 'pk.eyJ1IjoiYXJhai1tYXBwaW5nIiwiYSI6ImNrOTAxa2MwZzAwenczb
                marker, even though they are marked as permanent (which I
                don't think is right, and certainly is not what I want).
                To address this, I remove the mouseout handler on the
-               affected markers when dipslaying the popups.  Unfortunately
+               affected markers when displaying the popups.  Unfortunately
                without actually relying upon a knowledge of the leaflet.js
                source code, I have no way of finding out what the original
                handler did, and therefore can't reinstate it.  Instead, I'm
@@ -1060,7 +1060,7 @@ function limitToRadius (id)
 
 	if (includeDistanceInPopup && !tooltipText.includes(":"))
 	{
-	    tooltipText += ": " + d.toFixed(1) + " miles";
+	    tooltipText += ": " + d.toFixed(2) + " miles";
 	    tooltip.options.permanent = true;
 	    marker.setTooltipContent(tooltipText);
 	    marker.openTooltip();
